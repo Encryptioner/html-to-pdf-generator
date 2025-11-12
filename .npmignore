@@ -1,0 +1,61 @@
+# Source files (only publish dist/)
+src/
+*.ts
+*.tsx
+!*.d.ts
+
+# Configuration files
+tsconfig.json
+tsup.config.ts
+.prettierrc
+.prettierignore
+.editorconfig
+
+# Development files
+*.test.ts
+*.test.tsx
+*.spec.ts
+*.spec.tsx
+__tests__/
+test/
+tests/
+coverage/
+
+# Documentation (keep README.md)
+docs/
+examples/
+EXAMPLE.tsx
+*.md
+!README.md
+!LICENSE.md
+
+# Build artifacts
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+*.log
+*.tgz
+.DS_Store
+.env
+.env.*
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Other
+*.orig
+.npmrc
