@@ -7,11 +7,12 @@ A modern, reusable library for generating multi-page PDFs from HTML content with
 ### Core Features
 - **Multi-page support**: Automatically splits content across multiple pages
 - **Smart pagination**: Respects element boundaries and prevents awkward cuts
-- **Color handling**: Automatic OKLCH to RGB conversion for Tailwind CSS v4
-- **React hooks**: Easy integration with React components
+- **HTML String Support**: Generate PDFs from HTML strings or DOM elements
+- **Tailwind CSS Compatible**: Automatic OKLCH to RGB conversion for Tailwind CSS
+- **Framework Adapters**: Works with React, Vue, Svelte, or vanilla JS
 - **Progress tracking**: Real-time progress updates during generation
 - **Type-safe**: Full TypeScript support
-- **NPM-ready**: Structured for easy extraction as a standalone package
+- **External CSS**: Automatically loads and processes external stylesheets
 
 ### Advanced Image Support
 - **SVG to Image Conversion**: Automatically converts SVG elements to images
@@ -51,6 +52,7 @@ yarn add @encryptioner/html-to-pdf-generator
 
 ### Vanilla JavaScript/TypeScript
 
+**From DOM Element:**
 ```typescript
 import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 
@@ -64,6 +66,65 @@ await generatePDF(element, 'my-document.pdf', {
   imageQuality: 0.85,
   onProgress: (progress) => console.log(`${progress}%`),
 });
+```
+
+**From HTML String:**
+```typescript
+import { generatePDFFromHTML } from '@encryptioner/html-to-pdf-generator';
+
+// Full HTML document
+const html = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      body { font-family: Arial, sans-serif; }
+      .header { color: #333; font-size: 24px; }
+    </style>
+  </head>
+  <body>
+    <div class="header">My Document</div>
+    <p>This is a paragraph with some content.</p>
+  </body>
+</html>
+`;
+
+await generatePDFFromHTML(html, 'document.pdf', {
+  format: 'a4',
+  showPageNumbers: true,
+});
+
+// Or HTML fragment
+const fragment = `
+<div>
+  <h1>Hello World</h1>
+  <p>Simple HTML fragment</p>
+</div>
+`;
+
+await generatePDFFromHTML(fragment, 'fragment.pdf');
+```
+
+**With Tailwind CSS:**
+```typescript
+import { generatePDFFromHTML } from '@encryptioner/html-to-pdf-generator';
+
+const htmlWithTailwind = `
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body>
+    <div class="p-8 bg-gray-100">
+      <h1 class="text-3xl font-bold text-blue-600">Styled Document</h1>
+      <p class="mt-4 text-gray-700">Content with Tailwind classes</p>
+    </div>
+  </body>
+</html>
+`;
+
+await generatePDFFromHTML(htmlWithTailwind, 'tailwind-doc.pdf');
 ```
 
 ### React

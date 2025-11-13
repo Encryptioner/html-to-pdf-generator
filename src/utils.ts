@@ -240,6 +240,85 @@ export function sanitizeFilename(name: string, extension: string): string {
 }
 
 /**
+ * Convert HTML string to HTMLElement
+ * Supports full HTML documents or HTML fragments
+ */
+export function htmlStringToElement(htmlString: string): HTMLElement {
+  // Create a temporary container
+  const container = document.createElement('div');
+
+  // Clean up the HTML string
+  const trimmedHTML = htmlString.trim();
+
+  // Check if it's a full HTML document
+  const isFullDocument = /^<!DOCTYPE|^<html/i.test(trimmedHTML);
+
+  if (isFullDocument) {
+    // Parse as full document
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(trimmedHTML, 'text/html');
+
+    // Extract body content
+    const body = doc.body;
+
+    // Also extract and apply styles from head
+    const styles = doc.head.querySelectorAll('style, link[rel="stylesheet"]');
+    const wrapper = document.createElement('div');
+
+    // Add styles to wrapper
+    styles.forEach(style => {
+      wrapper.appendChild(style.cloneNode(true));
+    });
+
+    // Add body content
+    Array.from(body.children).forEach(child => {
+      wrapper.appendChild(child.cloneNode(true));
+    });
+
+    return wrapper;
+  } else {
+    // Parse as HTML fragment
+    container.innerHTML = trimmedHTML;
+
+    // If there's only one child, return it directly
+    if (container.children.length === 1) {
+      return container.children[0] as HTMLElement;
+    }
+
+    // Otherwise return the container with all children
+    return container;
+  }
+}
+
+/**
+ * Load external CSS from link tags in HTML string
+ */
+export async function loadExternalStyles(element: HTMLElement): Promise<void> {
+  const linkTags = element.querySelectorAll('link[rel="stylesheet"]');
+
+  const promises = Array.from(linkTags).map(async (link) => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    try {
+      const response = await fetch(href);
+      const cssText = await response.text();
+
+      // Create style element
+      const style = document.createElement('style');
+      style.textContent = cssText;
+
+      // Replace link with style
+      link.parentNode?.replaceChild(style, link);
+    } catch (error) {
+      console.warn(`Failed to load external stylesheet: ${href}`, error);
+    }
+  });
+
+  await Promise.all(promises);
+}
+
+/**
  * Estimate the number of pages needed based on content height
  */
 export function estimatePageCount(

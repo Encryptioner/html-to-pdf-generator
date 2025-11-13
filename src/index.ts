@@ -27,7 +27,13 @@
  * ```
  */
 
-export { PDFGenerator, generatePDF, generatePDFBlob } from './core';
+export {
+  PDFGenerator,
+  generatePDF,
+  generatePDFBlob,
+  generatePDFFromHTML,
+  generateBlobFromHTML,
+} from './core';
 export type {
   PDFGeneratorOptions,
   PDFPageConfig,
@@ -41,6 +47,8 @@ export {
   calculatePageConfig,
   generateColorReplacementCSS,
   sanitizeFilename,
+  htmlStringToElement,
+  loadExternalStyles,
 } from './utils';
 
 // Advanced image handling exports

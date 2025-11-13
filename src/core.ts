@@ -18,13 +18,13 @@ import {
   generateColorReplacementCSS,
   createStyleElement,
   sanitizeFilename,
-  waitForImagesToLoad,
   TAILWIND_COLOR_REPLACEMENTS,
+  htmlStringToElement,
+  loadExternalStyles,
 } from './utils';
 import {
   processImagesForPDF,
   processBackgroundImages,
-  convertSVGsToImages,
 } from './image-handler';
 import { processTablesForPDF, optimizeTableForPDF } from './table-handler';
 import { applyPageBreakHints } from './page-break-handler';
@@ -432,7 +432,7 @@ export class PDFGenerator {
 }
 
 /**
- * Convenience function for quick PDF generation
+ * Convenience function for quick PDF generation from HTMLElement
  */
 export async function generatePDF(
   element: HTMLElement,
@@ -444,7 +444,7 @@ export async function generatePDF(
 }
 
 /**
- * Convenience function for blob generation
+ * Convenience function for blob generation from HTMLElement
  */
 export async function generatePDFBlob(
   element: HTMLElement,
@@ -452,4 +452,107 @@ export async function generatePDFBlob(
 ): Promise<Blob> {
   const generator = new PDFGenerator(options);
   return generator.generateBlob(element);
+}
+
+/**
+ * Generate PDF from HTML string (full document or fragment)
+ * Supports Tailwind CSS and external stylesheets
+ *
+ * @example
+ * ```typescript
+ * const html = `
+ *   <!DOCTYPE html>
+ *   <html>
+ *     <head>
+ *       <style>body { font-family: Arial; }</style>
+ *     </head>
+ *     <body>
+ *       <h1>My Document</h1>
+ *       <p>Content here</p>
+ *     </body>
+ *   </html>
+ * `;
+ *
+ * await generatePDFFromHTML(html, 'document.pdf');
+ * ```
+ */
+export async function generatePDFFromHTML(
+  htmlString: string,
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<PDFGenerationResult> {
+  // Convert HTML string to element
+  const element = htmlStringToElement(htmlString);
+
+  // Append to document temporarily (needed for styles to compute)
+  element.style.position = 'absolute';
+  element.style.left = '-9999px';
+  element.style.top = '0';
+  document.body.appendChild(element);
+
+  try {
+    // Load external stylesheets if any
+    await loadExternalStyles(element);
+
+    // Wait a bit for styles to apply
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Generate PDF
+    const generator = new PDFGenerator(options);
+    const result = await generator.generatePDF(element, filename);
+
+    return result;
+  } finally {
+    // Cleanup
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+  }
+}
+
+/**
+ * Generate PDF blob from HTML string (full document or fragment)
+ *
+ * @example
+ * ```typescript
+ * const html = '<div><h1>Hello</h1><p>World</p></div>';
+ * const blob = await generateBlobFromHTML(html);
+ *
+ * // Upload to server
+ * const formData = new FormData();
+ * formData.append('pdf', blob, 'document.pdf');
+ * await fetch('/api/upload', { method: 'POST', body: formData });
+ * ```
+ */
+export async function generateBlobFromHTML(
+  htmlString: string,
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<Blob> {
+  // Convert HTML string to element
+  const element = htmlStringToElement(htmlString);
+
+  // Append to document temporarily
+  element.style.position = 'absolute';
+  element.style.left = '-9999px';
+  element.style.top = '0';
+  document.body.appendChild(element);
+
+  try {
+    // Load external stylesheets if any
+    await loadExternalStyles(element);
+
+    // Wait for styles to apply
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // Generate blob
+    const generator = new PDFGenerator(options);
+    const blob = await generator.generateBlob(element);
+
+    return blob;
+  } finally {
+    // Cleanup
+    if (element.parentNode) {
+      element.parentNode.removeChild(element);
+    }
+  }
 }
