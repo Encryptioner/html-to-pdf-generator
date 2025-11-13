@@ -2,6 +2,223 @@
 
 ## ✅ Production-Ready Features
 
+### OKLCH Color Support (v4.1.0)
+
+#### Comprehensive OKLCH to RGB Conversion
+- ✅ **Automatic Conversion** - Transparent OKLCH to RGB conversion before rendering
+- ✅ **All Format Support** - oklch(L C H), oklch(L C H / alpha), percentages, angle units
+- ✅ **Angle Units** - Supports deg, rad, grad, turn
+- ✅ **Alpha Channel** - Preserves transparency in RGBA output
+- ✅ **Inline Styles** - Processes inline style attributes
+- ✅ **Stylesheets** - Converts <style> tag contents
+- ✅ **CSS Variables** - Handles CSS custom properties
+- ✅ **html2canvas Compatible** - Fixes "unsupported color function 'oklch'" error
+- ✅ **Tailwind CSS v4** - Full support for Tailwind's OKLCH colors
+- ✅ **Zero Config** - Works automatically without configuration
+- ✅ **Cleanup** - Removes temporary converted styles after generation
+
+**Implementation Details:**
+- OKLCH → OKLab → Linear RGB → sRGB conversion pipeline
+- Accurate color space transformation with gamma correction
+- Clamps RGB values to valid 0-255 range
+- Preserves color accuracy across all formats
+
+**API:**
+```typescript
+import {
+  oklchToRgb,
+  convertOklchToRgbInCSS,
+  convertOklchInElement,
+  convertOklchInStylesheets,
+} from '@encryptioner/html-to-pdf-generator';
+
+// Convert single OKLCH color
+const rgb = oklchToRgb('oklch(0.5 0.2 180)'); // "rgb(0, 128, 128)"
+
+// Convert CSS text
+const css = convertOklchToRgbInCSS('color: oklch(0.5 0.2 180 / 0.5);');
+
+// Process element
+convertOklchInElement(element);
+
+// Process stylesheets
+convertOklchInStylesheets(element);
+```
+
+### Phase 1 Features (v4.0.0)
+
+#### Watermark Support
+- ✅ **Text Watermarks** - Customizable text with opacity, rotation, position
+- ✅ **Image Watermarks** - Add logo or image watermarks
+- ✅ **Position Control** - center, diagonal, corners (top-left, top-right, bottom-left, bottom-right)
+- ✅ **Opacity Control** - Adjustable transparency (0-1)
+- ✅ **Rotation** - Custom rotation angle
+- ✅ **Font Customization** - Font size and color for text watermarks
+- ✅ **All Pages or Specific** - Apply to all pages or specific pages
+
+**API:**
+```typescript
+watermark: {
+  text: 'CONFIDENTIAL',
+  opacity: 0.3,
+  position: 'diagonal',
+  fontSize: 48,
+  color: '#cccccc',
+  allPages: true
+}
+```
+
+#### Header/Footer Templates
+- ✅ **Dynamic Variables** - {{pageNumber}}, {{totalPages}}, {{date}}, {{title}}
+- ✅ **Custom Height** - Configurable header/footer height
+- ✅ **CSS Styling** - Custom CSS for styling
+- ✅ **First Page Control** - Show/hide on first page
+- ✅ **Margin Positioning** - Renders in margins without overlapping content
+
+**API:**
+```typescript
+headerTemplate: {
+  template: 'Page {{pageNumber}} of {{totalPages}}',
+  height: 20,
+  firstPage: false
+}
+```
+
+#### PDF Metadata
+- ✅ **Document Properties** - title, author, subject
+- ✅ **Keywords Array** - Multiple keywords support
+- ✅ **Creator/Producer** - Application information
+- ✅ **Creation Date** - Custom date setting
+- ✅ **Embedded Metadata** - Stored in PDF properties
+
+**API:**
+```typescript
+metadata: {
+  title: 'Annual Report 2025',
+  author: 'John Doe',
+  keywords: ['report', 'finance']
+}
+```
+
+#### Print Media CSS Emulation
+- ✅ **@media print Support** - Extract and apply print styles
+- ✅ **Automatic Extraction** - Parse from stylesheets
+- ✅ **Error Handling** - Graceful handling of CORS errors
+- ✅ **Priority Control** - Print styles override screen styles
+
+**API:**
+```typescript
+emulateMediaType: 'print' // or 'screen' (default)
+```
+
+#### Batch PDF Generation
+- ✅ **Multiple Content Items** - Combine HTML elements or strings
+- ✅ **Auto-Scaling** - Scale to fit target page count
+- ✅ **Page Count Control** - Specify pages per item
+- ✅ **Single PDF Output** - All items in one document
+- ✅ **Progress Tracking** - Per-item progress updates
+- ✅ **Result Metadata** - Item page ranges and counts
+
+**API:**
+```typescript
+const items = [
+  { content: element, pageCount: 2 },
+  { content: '<div>...</div>', pageCount: 1 }
+];
+await generateBatchPDF(items, 'report.pdf');
+```
+
+### Phase 2 Features (v4.0.0)
+
+#### Template Variable System
+- ✅ **Simple Variables** - {{variable}} replacement
+- ✅ **Loop Support** - {{#each items}}{{name}}{{/each}}
+- ✅ **Conditional Support** - {{#if condition}}text{{/if}}
+- ✅ **Nested Objects** - Access nested properties
+- ✅ **Array Iteration** - Loop through arrays with context
+- ✅ **Boolean Conditionals** - Show/hide content based on flags
+
+**API:**
+```typescript
+processTemplateWithContext(template, {
+  title: 'Invoice',
+  items: [{ name: 'Item 1', price: '$10' }],
+  showFooter: true
+}, {
+  enableLoops: true,
+  enableConditionals: true
+});
+```
+
+#### Font Handling Improvements
+- ✅ **Web-Safe Font Map** - Pre-defined replacements
+- ✅ **Font Family Detection** - Automatic detection and replacement
+- ✅ **@font-face Generation** - Generate CSS for custom fonts
+- ✅ **Font Configuration** - Specify family, source, weight, style
+- ✅ **Format Support** - TrueType, OpenType, WOFF, WOFF2
+- ✅ **Fallback Fonts** - Automatic fallback when fonts fail
+- ✅ **Embed Options** - Control font embedding
+
+**Supported Fonts:**
+- Arial, Helvetica, Times New Roman, Courier New, Verdana, Georgia, Palatino, Garamond, and more
+
+**API:**
+```typescript
+fontOptions: {
+  fonts: [{
+    family: 'Roboto',
+    src: '/fonts/Roboto-Regular.ttf',
+    weight: 400
+  }],
+  useWebSafeFonts: true,
+  fallbackFont: 'Arial'
+}
+```
+
+#### Table of Contents Generation
+- ✅ **Auto-Generate from Headings** - Extract h1, h2, h3 elements
+- ✅ **Hierarchical Structure** - Nested TOC based on heading levels
+- ✅ **Page Number Tracking** - Automatic page number detection
+- ✅ **Custom Styling** - CSS control over appearance
+- ✅ **Position Control** - Place at start or end
+- ✅ **Indentation** - Configurable indent per level
+- ✅ **Links** - Optional clickable links to sections
+- ✅ **ID Generation** - Automatic heading ID generation
+- ✅ **Default CSS** - Professional styling included
+
+**API:**
+```typescript
+tocOptions: {
+  enabled: true,
+  title: 'Table of Contents',
+  levels: [1, 2, 3],
+  position: 'start',
+  includePageNumbers: true,
+  indentPerLevel: 10
+}
+```
+
+#### Bookmarks/Outline Support
+- ✅ **Auto-Generate from Headings** - Create outline from structure
+- ✅ **Custom Bookmarks** - Define manual entries
+- ✅ **Nested Structure** - Hierarchical with children
+- ✅ **Page Targeting** - Link to specific pages
+- ✅ **Level Control** - Specify heading levels
+- ✅ **Open by Default** - Control panel visibility
+- ✅ **Hierarchy Building** - Automatic parent-child relationships
+
+**API:**
+```typescript
+bookmarkOptions: {
+  enabled: true,
+  autoGenerate: true,
+  levels: [1, 2, 3],
+  custom: [
+    { title: 'Chapter 1', page: 1, level: 1 }
+  ]
+}
+```
+
 ### 1. Multi-Page PDF Generation
 - ✅ **Smart Continuous Pagination** - No awkward content cuts or large bottom spaces
 - ✅ **Single-Page Optimization** - Content that fits on one page renders as single-page PDF

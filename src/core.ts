@@ -5,7 +5,7 @@
  */
 
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import type {
   PDFGeneratorOptions,
   PDFPageConfig,
@@ -23,6 +23,10 @@ import {
   TAILWIND_COLOR_REPLACEMENTS,
   htmlStringToElement,
   loadExternalStyles,
+  convertOklchToRgbInCSS,
+  convertOklchInElement,
+  convertOklchInStylesheets,
+  extractAndConvertOklchFromStylesheets,
 } from './utils';
 import {
   processImagesForPDF,
@@ -173,17 +177,70 @@ export class PDFGenerator {
     container.appendChild(clone);
     document.body.appendChild(container);
 
-    // Inject custom CSS for color replacements
-    const css = [
+    // Inject custom CSS for color replacements and print media emulation
+    const cssBlocks = [
       generateColorReplacementCSS(this.options.colorReplacements, 'pdf-render-target'),
       this.options.customCSS,
-    ].join('\n\n');
+    ];
 
-    this.styleElement = createStyleElement(css, 'pdf-color-override');
+    // Emulate print media if requested
+    if (this.options.emulateMediaType === 'print') {
+      cssBlocks.push(`
+        /* Force print media styles to apply */
+        @media screen {
+          #pdf-render-target * {
+            /* Convert print styles to screen */
+          }
+        }
+      `);
+
+      // Apply print styles by temporarily changing media
+      const printStyles = Array.from(document.styleSheets)
+        .flatMap(sheet => {
+          try {
+            return Array.from(sheet.cssRules || []);
+          } catch {
+            return [];
+          }
+        })
+        .filter(rule => {
+          if (rule instanceof CSSMediaRule) {
+            return rule.media.mediaText.includes('print');
+          }
+          return false;
+        })
+        .map(rule => rule.cssText.replace('@media print', ''))
+        .join('\n');
+
+      if (printStyles) {
+        cssBlocks.push(`/* Print media styles */\n${printStyles}`);
+      }
+    }
+
+    const css = cssBlocks.join('\n\n');
+
+    // Convert OKLCH colors in custom CSS to RGB
+    const cssWithRgb = convertOklchToRgbInCSS(css);
+
+    // Extract and convert all OKLCH rules from document stylesheets
+    const oklchOverrides = extractAndConvertOklchFromStylesheets();
+
+    // Combine all CSS
+    const finalCss = [cssWithRgb, oklchOverrides].filter(Boolean).join('\n\n');
+
+    this.styleElement = createStyleElement(finalCss, 'pdf-color-override');
     document.head.appendChild(this.styleElement);
 
     // Wait for styles to apply
     await new Promise((resolve) => setTimeout(resolve, 100));
+
+    // Convert OKLCH colors in stylesheets to RGB (before html2canvas)
+    this.options.onProgress(6);
+    convertOklchInStylesheets(clone);
+
+    // Convert OKLCH colors in inline styles and computed styles to RGB
+    // This is crucial for colors from external stylesheets or Tailwind CSS
+    convertOklchInElement(clone);
 
     // Process images (SVG conversion, optimization, preloading)
     this.options.onProgress(7);
@@ -266,6 +323,9 @@ export class PDFGenerator {
       compress: this.options.compress,
     });
 
+    // Set PDF metadata
+    this.setPDFMetadata(pdf);
+
     // Calculate dimensions - image width fills the usable page width
     const imgWidth = this.pageConfig.usableWidth;
 
@@ -289,6 +349,15 @@ export class PDFGenerator {
         imgHeightMm
       );
 
+      // Add header/footer
+      this.addHeaderFooter(pdf, 1, 1);
+
+      // Add watermark
+      if (this.options.watermark?.allPages !== false) {
+        this.addWatermark(pdf);
+      }
+
+      // Add page number
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, 1, 1);
       }
@@ -355,6 +424,15 @@ export class PDFGenerator {
         sliceHeightMm
       );
 
+      // Add header/footer
+      this.addHeaderFooter(pdf, pageNumber, totalPages);
+
+      // Add watermark
+      if (this.options.watermark?.allPages !== false) {
+        this.addWatermark(pdf);
+      }
+
+      // Add page number
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, pageNumber, totalPages);
       }
@@ -366,6 +444,250 @@ export class PDFGenerator {
     return pdf;
   }
 
+
+  /**
+   * Add watermark to PDF page
+   */
+  private addWatermark(pdf: jsPDF): void {
+    if (!this.options.watermark) return;
+
+    const watermark = this.options.watermark;
+    const pageSize = pdf.internal.pageSize;
+    const pageWidth = pageSize.getWidth();
+    const pageHeight = pageSize.getHeight();
+
+    // Set opacity
+    const opacity = watermark.opacity ?? 0.3;
+    // @ts-ignore - jsPDF GState is not in types
+    pdf.setGState(new pdf.GState({ opacity }));
+
+    if (watermark.text) {
+      // Text watermark
+      const fontSize = watermark.fontSize ?? 48;
+      const color = watermark.color ?? '#cccccc';
+      const position = watermark.position ?? 'diagonal';
+      const rotation = watermark.rotation ?? (position === 'diagonal' ? 45 : 0);
+
+      pdf.setFontSize(fontSize);
+
+      // Parse color
+      const rgb = this.parseColor(color);
+      pdf.setTextColor(rgb.r, rgb.g, rgb.b);
+
+      // Calculate text dimensions (approximate)
+      const textWidth = (pdf.getStringUnitWidth(watermark.text) * fontSize) / pdf.internal.scaleFactor;
+      const textHeight = fontSize / pdf.internal.scaleFactor;
+
+      // Calculate position
+      const pos = this.calculateWatermarkPosition(
+        position,
+        pageWidth,
+        pageHeight,
+        textWidth,
+        textHeight
+      );
+
+      // Save state and rotate
+      pdf.saveGraphicsState();
+
+      if (rotation !== 0) {
+        // Translate to position, rotate, then draw
+        pdf.text(watermark.text, pos.x, pos.y, {
+          angle: rotation,
+          align: 'center',
+          baseline: 'middle'
+        });
+      } else {
+        pdf.text(watermark.text, pos.x, pos.y, {
+          align: position.includes('right') ? 'right' : position.includes('left') ? 'left' : 'center',
+          baseline: position.includes('top') ? 'top' : position.includes('bottom') ? 'bottom' : 'middle'
+        });
+      }
+
+      pdf.restoreGraphicsState();
+    } else if (watermark.image) {
+      // Image watermark
+      const position = watermark.position ?? 'center';
+      const imgWidth = 100; // Default width in mm
+      const imgHeight = 100; // Default height in mm
+
+      const pos = this.calculateWatermarkPosition(
+        position,
+        pageWidth,
+        pageHeight,
+        imgWidth,
+        imgHeight
+      );
+
+      pdf.addImage(
+        watermark.image,
+        'PNG',
+        pos.x - imgWidth / 2,
+        pos.y - imgHeight / 2,
+        imgWidth,
+        imgHeight
+      );
+    }
+
+    // Reset opacity
+    // @ts-ignore - jsPDF GState is not in types
+    pdf.setGState(new pdf.GState({ opacity: 1 }));
+  }
+
+  /**
+   * Add header/footer template to PDF page
+   */
+  private addHeaderFooter(
+    pdf: jsPDF,
+    pageNumber: number,
+    totalPages: number
+  ): void {
+    const pageSize = pdf.internal.pageSize;
+    const pageWidth = pageSize.getWidth();
+    const [marginTop, marginRight, marginBottom, marginLeft] = this.options.margins;
+
+    // Add header
+    if (this.options.headerTemplate?.template) {
+      const header = this.options.headerTemplate;
+
+      // Skip first page if configured
+      if (pageNumber === 1 && header.firstPage === false) {
+        return;
+      }
+
+      const variables = {
+        pageNumber: String(pageNumber),
+        totalPages: String(totalPages),
+        date: this.formatDate(),
+        title: this.options.metadata?.title || ''
+      };
+
+      const headerHtml = this.processTemplate(header.template || '', variables);
+      const height = header.height ?? 20;
+
+      // Render header text (simple text rendering)
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(headerHtml, pageWidth / 2, marginTop / 2, { align: 'center' });
+    }
+
+    // Add footer
+    if (this.options.footerTemplate?.template) {
+      const footer = this.options.footerTemplate;
+
+      // Skip first page if configured
+      if (pageNumber === 1 && footer.firstPage === false) {
+        return;
+      }
+
+      const variables = {
+        pageNumber: String(pageNumber),
+        totalPages: String(totalPages),
+        date: this.formatDate(),
+        title: this.options.metadata?.title || ''
+      };
+
+      const footerHtml = this.processTemplate(footer.template || '', variables);
+      const pageHeight = pageSize.getHeight();
+
+      // Render footer text
+      pdf.setFontSize(10);
+      pdf.setTextColor(0, 0, 0);
+      pdf.text(footerHtml, pageWidth / 2, pageHeight - marginBottom / 2, { align: 'center' });
+    }
+  }
+
+  /**
+   * Set PDF metadata
+   */
+  private setPDFMetadata(pdf: jsPDF): void {
+    if (!this.options.metadata) return;
+
+    const metadata = this.options.metadata;
+
+    const properties: any = {};
+
+    if (metadata.title) properties.title = metadata.title;
+    if (metadata.author) properties.author = metadata.author;
+    if (metadata.subject) properties.subject = metadata.subject;
+    if (metadata.keywords) properties.keywords = metadata.keywords.join(', ');
+    if (metadata.creator) properties.creator = metadata.creator;
+
+    pdf.setProperties(properties);
+
+    // Set creation date if provided
+    if (metadata.creationDate) {
+      pdf.setCreationDate(metadata.creationDate);
+    }
+  }
+
+  /**
+   * Helper: Parse color string to RGB
+   */
+  private parseColor(color: string): { r: number; g: number; b: number } {
+    // Try hex color
+    const hex = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+    if (hex) {
+      return {
+        r: parseInt(hex[1], 16),
+        g: parseInt(hex[2], 16),
+        b: parseInt(hex[3], 16)
+      };
+    }
+
+    // Default to gray
+    return { r: 200, g: 200, b: 200 };
+  }
+
+  /**
+   * Helper: Calculate watermark position
+   */
+  private calculateWatermarkPosition(
+    position: string,
+    pageWidth: number,
+    pageHeight: number,
+    width: number,
+    height: number
+  ): { x: number; y: number } {
+    switch (position) {
+      case 'center':
+      case 'diagonal':
+        return { x: pageWidth / 2, y: pageHeight / 2 };
+      case 'top-left':
+        return { x: width / 2 + 10, y: height / 2 + 10 };
+      case 'top-right':
+        return { x: pageWidth - width / 2 - 10, y: height / 2 + 10 };
+      case 'bottom-left':
+        return { x: width / 2 + 10, y: pageHeight - height / 2 - 10 };
+      case 'bottom-right':
+        return { x: pageWidth - width / 2 - 10, y: pageHeight - height / 2 - 10 };
+      default:
+        return { x: pageWidth / 2, y: pageHeight / 2 };
+    }
+  }
+
+  /**
+   * Helper: Process template string
+   */
+  private processTemplate(template: string, variables: Record<string, string>): string {
+    let processed = template;
+    Object.entries(variables).forEach(([key, value]) => {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      processed = processed.replace(regex, value);
+    });
+    return processed;
+  }
+
+  /**
+   * Helper: Format date
+   */
+  private formatDate(date: Date = new Date()): string {
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
 
   /**
    * Add page number to PDF
@@ -391,7 +713,7 @@ export class PDFGenerator {
    * Cleanup temporary elements
    */
   private cleanup(preparedElement?: HTMLElement): void {
-    // Remove style element
+    // Remove style element (includes OKLCH overrides)
     if (this.styleElement && this.styleElement.parentNode) {
       document.head.removeChild(this.styleElement);
       this.styleElement = null;
@@ -605,6 +927,9 @@ export async function generateBatchPDF(
       compress: config.options.compress,
     });
 
+    // Set PDF metadata
+    generator['setPDFMetadata'](pdf);
+
     const [marginTop, marginRight, marginBottom, marginLeft] = config.options.margins;
     const itemResults: Array<{
       index: number;
@@ -710,6 +1035,15 @@ export async function generateBatchPDF(
             pageContentHeight
           );
 
+          // Add header/footer
+          generator['addHeaderFooter'](pdf, currentPage, -1); // Total pages unknown at this stage
+
+          // Add watermark
+          if (config.options.watermark?.allPages !== false) {
+            generator['addWatermark'](pdf);
+          }
+
+          // Add page number
           if (config.options.showPageNumbers) {
             const pageSize = pdf.internal.pageSize;
             const pageHeight = pageSize.getHeight();
@@ -923,6 +1257,15 @@ export async function generateBatchPDFBlob(
             pageContentHeight
           );
 
+          // Add header/footer
+          generator['addHeaderFooter'](pdf, currentPage, -1); // Total pages unknown at this stage
+
+          // Add watermark
+          if (config.options.watermark?.allPages !== false) {
+            generator['addWatermark'](pdf);
+          }
+
+          // Add page number
           if (config.options.showPageNumbers) {
             const pageSize = pdf.internal.pageSize;
             const pageHeight = pageSize.getHeight();
