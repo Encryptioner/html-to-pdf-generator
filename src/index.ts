@@ -50,6 +50,15 @@ export {
   htmlStringToElement,
   loadExternalStyles,
 } from './utils';
+export {
+  DEFAULT_PDF_OPTIONS,
+  injectPDFStyles,
+  HIGH_QUALITY_PDF_OPTIONS,
+  FAST_PDF_OPTIONS,
+  generatePDFColorCSS,
+  getPDFContentWidth,
+  PDF_CONTENT_WIDTH_PX
+} from './helpers';
 
 // Advanced image handling exports
 export {
