@@ -65,15 +65,15 @@ The library uses a 3-step process similar to browser screenshot extensions:
 ### Module Structure
 
 **Core Library (framework-agnostic) - `src/`:**
-- `src/core.ts` - PDFGenerator class, main generation logic
-- `src/types.ts` - TypeScript interfaces and type definitions
+- `src/core.ts` - PDFGenerator class, main generation logic, batch PDF generation with auto-scaling
+- `src/types.ts` - TypeScript interfaces and type definitions (includes PDFContentItem and BatchPDFGenerationResult)
 - `src/utils.ts` - Helper functions (color conversion, page calculations, filename sanitization)
 - `src/image-handler.ts` - SVG conversion, image optimization, background image processing
 - `src/table-handler.ts` - Table pagination, header repetition, row splitting prevention
 - `src/page-break-handler.ts` - CSS page-break properties, orphan prevention
 
 **Framework Adapters - `src/adapters/`:**
-- `src/adapters/react/usePDFGenerator.ts` - React hooks (ref-based and manual)
+- `src/adapters/react/usePDFGenerator.ts` - React hooks (ref-based, manual, and batch generation)
 - `src/adapters/react/index.ts` - React adapter entry point
 - `src/adapters/vue/usePDFGenerator.ts` - Vue 3 composable
 - `src/adapters/vue/index.ts` - Vue adapter entry point
@@ -135,6 +135,41 @@ Tables automatically enhanced (core.ts:199-207):
 - Rows kept together (no mid-row splits)
 - Borders enforced for better PDF visibility
 - Column widths fixed for consistency
+
+### Batch PDF Generation
+
+The library supports generating PDFs from multiple content items with automatic scaling (core.ts:588-989):
+
+**Key Features:**
+- Accept array of content items (HTML elements or strings)
+- Each item specifies desired page count
+- Content automatically scaled to fit within specified pages
+- All items combined into single PDF file
+- Progress tracking for batch operations
+
+**Auto-Scaling Behavior:**
+- Content rendered at natural size first
+- Scale factor calculated: `targetPages / naturalPages`
+- Content scaled up/down to fit exactly into target page count
+- Maintains aspect ratio and quality
+
+**Usage Pattern:**
+```typescript
+const items = [
+  { content: htmlElement, pageCount: 2 },      // Scale to fit 2 pages
+  { content: '<div>...</div>', pageCount: 1 }, // Scale to fit 1 page
+];
+await generateBatchPDF(items, 'report.pdf');
+```
+
+**Result Structure:**
+- Returns `BatchPDFGenerationResult` with overall stats
+- Includes per-item tracking (startPage, endPage, actual pageCount)
+- Total file size and generation time
+
+**Framework Integration:**
+- React: `useBatchPDFGenerator()` hook (src/adapters/react/)
+- Vue/Svelte: Use core functions directly
 
 ## Package Structure for NPM
 

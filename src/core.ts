@@ -11,6 +11,8 @@ import type {
   PDFPageConfig,
   PDFGenerationResult,
   PDFRenderContext,
+  PDFContentItem,
+  BatchPDFGenerationResult,
 } from './types';
 import {
   DEFAULT_OPTIONS,
@@ -554,5 +556,434 @@ export async function generateBlobFromHTML(
     if (element.parentNode) {
       element.parentNode.removeChild(element);
     }
+  }
+}
+
+/**
+ * Generate PDF from array of content items with specified page counts
+ * Content will be automatically scaled to fit within the specified number of pages
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   {
+ *     content: document.getElementById('section1'),
+ *     pageCount: 2
+ *   },
+ *   {
+ *     content: '<div><h1>Section 2</h1><p>Content</p></div>',
+ *     pageCount: 1
+ *   }
+ * ];
+ *
+ * const result = await generateBatchPDF(items, 'report.pdf', {
+ *   format: 'a4',
+ *   showPageNumbers: true
+ * });
+ *
+ * console.log(`Generated ${result.pageCount} pages`);
+ * console.log('Items:', result.items);
+ * ```
+ */
+export async function generateBatchPDF(
+  contentItems: PDFContentItem[],
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const startTime = performance.now();
+  const generator = new PDFGenerator(options);
+  const config = generator.getConfig();
+
+  try {
+    config.options.onProgress(0);
+
+    // Initialize PDF document
+    const pdf = new jsPDF({
+      orientation: config.options.orientation,
+      unit: 'mm',
+      format: config.options.format,
+      compress: config.options.compress,
+    });
+
+    const [marginTop, marginRight, marginBottom, marginLeft] = config.options.margins;
+    const itemResults: Array<{
+      index: number;
+      pageCount: number;
+      startPage: number;
+      endPage: number;
+    }> = [];
+
+    let currentPage = 0;
+    let firstItem = true;
+
+    // Process each content item
+    for (let i = 0; i < contentItems.length; i++) {
+      const item = contentItems[i];
+      const progressBase = (i / contentItems.length) * 90;
+      config.options.onProgress(progressBase);
+
+      // Convert string content to element if needed
+      let element: HTMLElement;
+      if (typeof item.content === 'string') {
+        element = htmlStringToElement(item.content);
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '0';
+        document.body.appendChild(element);
+        await loadExternalStyles(element);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        element = item.content;
+      }
+
+      // Prepare element for rendering
+      const preparedElement = await generator['prepareElement'](element);
+      config.options.onProgress(progressBase + 5);
+
+      // Calculate target height for the specified page count
+      const targetPageHeightMm = config.pageConfig.usableHeight * item.pageCount;
+
+      // Render to canvas
+      const canvas = await generator['renderToCanvas'](preparedElement);
+      config.options.onProgress(progressBase + 15);
+
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+
+      // Calculate image dimensions
+      const imgWidth = config.pageConfig.usableWidth;
+      const naturalHeightMm = (canvasHeight * imgWidth) / canvasWidth;
+
+      // Calculate scale factor to fit content into specified pages
+      const scaleFactor = targetPageHeightMm / naturalHeightMm;
+      const scaledHeightMm = naturalHeightMm * scaleFactor;
+      const scaledWidth = imgWidth * scaleFactor;
+
+      // Calculate how many actual pages this will occupy
+      const pagesNeeded = Math.ceil(scaledHeightMm / config.pageConfig.usableHeight);
+      const startPage = currentPage + 1;
+
+      // Add pages and content
+      for (let pageIndex = 0; pageIndex < pagesNeeded; pageIndex++) {
+        if (!firstItem || pageIndex > 0) {
+          pdf.addPage();
+        }
+        firstItem = false;
+        currentPage++;
+
+        // Calculate the slice of canvas for this page
+        const pageHeightMm = config.pageConfig.usableHeight;
+        const currentYOffset = pageIndex * pageHeightMm;
+        const remainingHeight = scaledHeightMm - currentYOffset;
+        const pageContentHeight = Math.min(pageHeightMm, remainingHeight);
+
+        // Calculate canvas coordinates
+        const canvasYStart = (currentYOffset / scaledHeightMm) * canvasHeight;
+        const canvasSliceHeight = (pageContentHeight / scaledHeightMm) * canvasHeight;
+
+        // Create page canvas
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = canvasSliceHeight;
+
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvasWidth, canvasSliceHeight);
+
+          ctx.drawImage(
+            canvas,
+            0, canvasYStart,
+            canvasWidth, canvasSliceHeight,
+            0, 0,
+            canvasWidth, canvasSliceHeight
+          );
+
+          const pageImgData = pageCanvas.toDataURL('image/jpeg', config.options.imageQuality);
+
+          pdf.addImage(
+            pageImgData,
+            'JPEG',
+            marginLeft,
+            marginTop,
+            scaledWidth,
+            pageContentHeight
+          );
+
+          if (config.options.showPageNumbers) {
+            const pageSize = pdf.internal.pageSize;
+            const pageHeight = pageSize.getHeight();
+            const pageWidth = pageSize.getWidth();
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(128, 128, 128);
+
+            const text = `${currentPage}`;
+
+            if (config.options.pageNumberPosition === 'footer') {
+              pdf.text(text, pageWidth / 2, pageHeight - 5, { align: 'center' });
+            } else {
+              pdf.text(text, pageWidth / 2, 5, { align: 'center' });
+            }
+          }
+        }
+      }
+
+      const endPage = currentPage;
+
+      itemResults.push({
+        index: i,
+        pageCount: pagesNeeded,
+        startPage,
+        endPage,
+      });
+
+      // Cleanup prepared element
+      generator['cleanup'](preparedElement);
+
+      // Cleanup temporary element if we created one
+      if (typeof item.content === 'string' && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+
+      config.options.onProgress(progressBase + 20);
+    }
+
+    config.options.onProgress(90);
+
+    // Generate blob and download
+    const blob = pdf.output('blob');
+    const totalPages = pdf.internal.pages.length - 1;
+
+    config.options.onProgress(95);
+
+    pdf.save(sanitizeFilename(filename, 'pdf'));
+    config.options.onProgress(100);
+
+    const generationTime = performance.now() - startTime;
+    const result: BatchPDFGenerationResult = {
+      blob,
+      pageCount: totalPages,
+      fileSize: blob.size,
+      generationTime,
+      items: itemResults,
+    };
+
+    config.options.onComplete(blob);
+    return result;
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    config.options.onError(err);
+    throw err;
+  }
+}
+
+/**
+ * Generate PDF blob from array of content items with specified page counts
+ * Returns only the blob without downloading
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   {
+ *     content: '<div>Section 1</div>',
+ *     pageCount: 1
+ *   },
+ *   {
+ *     content: document.getElementById('section2'),
+ *     pageCount: 2
+ *   }
+ * ];
+ *
+ * const result = await generateBatchPDFBlob(items);
+ * // Upload blob to server
+ * ```
+ */
+export async function generateBatchPDFBlob(
+  contentItems: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const startTime = performance.now();
+  const generator = new PDFGenerator(options);
+  const config = generator.getConfig();
+
+  try {
+    config.options.onProgress(0);
+
+    // Initialize PDF document
+    const pdf = new jsPDF({
+      orientation: config.options.orientation,
+      unit: 'mm',
+      format: config.options.format,
+      compress: config.options.compress,
+    });
+
+    const [marginTop, marginRight, marginBottom, marginLeft] = config.options.margins;
+    const itemResults: Array<{
+      index: number;
+      pageCount: number;
+      startPage: number;
+      endPage: number;
+    }> = [];
+
+    let currentPage = 0;
+    let firstItem = true;
+
+    // Process each content item
+    for (let i = 0; i < contentItems.length; i++) {
+      const item = contentItems[i];
+      const progressBase = (i / contentItems.length) * 90;
+      config.options.onProgress(progressBase);
+
+      // Convert string content to element if needed
+      let element: HTMLElement;
+      if (typeof item.content === 'string') {
+        element = htmlStringToElement(item.content);
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '0';
+        document.body.appendChild(element);
+        await loadExternalStyles(element);
+        await new Promise(resolve => setTimeout(resolve, 100));
+      } else {
+        element = item.content;
+      }
+
+      // Prepare element for rendering
+      const preparedElement = await generator['prepareElement'](element);
+      config.options.onProgress(progressBase + 5);
+
+      // Calculate target height for the specified page count
+      const targetPageHeightMm = config.pageConfig.usableHeight * item.pageCount;
+
+      // Render to canvas
+      const canvas = await generator['renderToCanvas'](preparedElement);
+      config.options.onProgress(progressBase + 15);
+
+      const canvasWidth = canvas.width;
+      const canvasHeight = canvas.height;
+
+      // Calculate image dimensions
+      const imgWidth = config.pageConfig.usableWidth;
+      const naturalHeightMm = (canvasHeight * imgWidth) / canvasWidth;
+
+      // Calculate scale factor to fit content into specified pages
+      const scaleFactor = targetPageHeightMm / naturalHeightMm;
+      const scaledHeightMm = naturalHeightMm * scaleFactor;
+      const scaledWidth = imgWidth * scaleFactor;
+
+      // Calculate how many actual pages this will occupy
+      const pagesNeeded = Math.ceil(scaledHeightMm / config.pageConfig.usableHeight);
+      const startPage = currentPage + 1;
+
+      // Add pages and content
+      for (let pageIndex = 0; pageIndex < pagesNeeded; pageIndex++) {
+        if (!firstItem || pageIndex > 0) {
+          pdf.addPage();
+        }
+        firstItem = false;
+        currentPage++;
+
+        // Calculate the slice of canvas for this page
+        const pageHeightMm = config.pageConfig.usableHeight;
+        const currentYOffset = pageIndex * pageHeightMm;
+        const remainingHeight = scaledHeightMm - currentYOffset;
+        const pageContentHeight = Math.min(pageHeightMm, remainingHeight);
+
+        // Calculate canvas coordinates
+        const canvasYStart = (currentYOffset / scaledHeightMm) * canvasHeight;
+        const canvasSliceHeight = (pageContentHeight / scaledHeightMm) * canvasHeight;
+
+        // Create page canvas
+        const pageCanvas = document.createElement('canvas');
+        pageCanvas.width = canvasWidth;
+        pageCanvas.height = canvasSliceHeight;
+
+        const ctx = pageCanvas.getContext('2d');
+        if (ctx) {
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvasWidth, canvasSliceHeight);
+
+          ctx.drawImage(
+            canvas,
+            0, canvasYStart,
+            canvasWidth, canvasSliceHeight,
+            0, 0,
+            canvasWidth, canvasSliceHeight
+          );
+
+          const pageImgData = pageCanvas.toDataURL('image/jpeg', config.options.imageQuality);
+
+          pdf.addImage(
+            pageImgData,
+            'JPEG',
+            marginLeft,
+            marginTop,
+            scaledWidth,
+            pageContentHeight
+          );
+
+          if (config.options.showPageNumbers) {
+            const pageSize = pdf.internal.pageSize;
+            const pageHeight = pageSize.getHeight();
+            const pageWidth = pageSize.getWidth();
+
+            pdf.setFontSize(10);
+            pdf.setTextColor(128, 128, 128);
+
+            const text = `${currentPage}`;
+
+            if (config.options.pageNumberPosition === 'footer') {
+              pdf.text(text, pageWidth / 2, pageHeight - 5, { align: 'center' });
+            } else {
+              pdf.text(text, pageWidth / 2, 5, { align: 'center' });
+            }
+          }
+        }
+      }
+
+      const endPage = currentPage;
+
+      itemResults.push({
+        index: i,
+        pageCount: pagesNeeded,
+        startPage,
+        endPage,
+      });
+
+      // Cleanup prepared element
+      generator['cleanup'](preparedElement);
+
+      // Cleanup temporary element if we created one
+      if (typeof item.content === 'string' && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+
+      config.options.onProgress(progressBase + 20);
+    }
+
+    config.options.onProgress(90);
+
+    // Generate blob
+    const blob = pdf.output('blob');
+    const totalPages = pdf.internal.pages.length - 1;
+
+    config.options.onProgress(100);
+
+    const generationTime = performance.now() - startTime;
+    const result: BatchPDFGenerationResult = {
+      blob,
+      pageCount: totalPages,
+      fileSize: blob.size,
+      generationTime,
+      items: itemResults,
+    };
+
+    config.options.onComplete(blob);
+    return result;
+  } catch (error) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    config.options.onError(err);
+    throw err;
   }
 }

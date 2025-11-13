@@ -123,3 +123,30 @@ export interface PDFRenderContext {
   /** Options */
   options: Required<PDFGeneratorOptions>;
 }
+
+/**
+ * Content item for batch PDF generation
+ */
+export interface PDFContentItem {
+  /** HTML element or HTML string to render */
+  content: HTMLElement | string;
+
+  /** Number of pages this content should occupy */
+  pageCount: number;
+
+  /** Optional page break behavior after this item */
+  pageBreakAfter?: boolean;
+}
+
+/**
+ * Result from batch PDF generation
+ */
+export interface BatchPDFGenerationResult extends PDFGenerationResult {
+  /** Individual item results */
+  items: Array<{
+    index: number;
+    pageCount: number;
+    startPage: number;
+    endPage: number;
+  }>;
+}
