@@ -5,8 +5,13 @@
  */
 
 import { writable, derived, type Writable, type Readable } from 'svelte/store';
-import { PDFGenerator } from '../../core';
-import type { PDFGeneratorOptions, PDFGenerationResult } from '../../types';
+import { PDFGenerator, generateBatchPDF, generateBatchPDFBlob } from '../../core';
+import type {
+  PDFGeneratorOptions,
+  PDFGenerationResult,
+  PDFContentItem,
+  BatchPDFGenerationResult
+} from '../../types';
 
 export interface SveltePDFGeneratorOptions extends Partial<PDFGeneratorOptions> {
   /** Filename for the generated PDF */
@@ -141,6 +146,154 @@ export function createPDFGenerator(
   return {
     generatePDF,
     generateBlob,
+    isGenerating: { subscribe: isGenerating.subscribe },
+    progress: { subscribe: progress.subscribe },
+    error: { subscribe: error.subscribe },
+    result: { subscribe: result.subscribe },
+    reset,
+  };
+}
+
+export interface SvelteBatchPDFGeneratorReturn {
+  /** Generate and download batch PDF */
+  generateBatchPDF: (
+    items: PDFContentItem[],
+    filename?: string
+  ) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Generate batch PDF blob without downloading (returns result with blob) */
+  generateBatchBlob: (
+    items: PDFContentItem[]
+  ) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Whether PDF is currently being generated */
+  isGenerating: Readable<boolean>;
+
+  /** Current progress (0-100) */
+  progress: Readable<number>;
+
+  /** Error if generation failed */
+  error: Readable<Error | null>;
+
+  /** Result from last successful batch generation */
+  result: Readable<BatchPDFGenerationResult | null>;
+
+  /** Reset state */
+  reset: () => void;
+}
+
+/**
+ * Create a batch PDF generator for Svelte
+ *
+ * @example
+ * ```svelte
+ * <script>
+ *   import { createBatchPDFGenerator } from '@your-org/pdf-generator/svelte';
+ *
+ *   const {
+ *     generateBatchPDF,
+ *     isGenerating,
+ *     progress,
+ *   } = createBatchPDFGenerator({
+ *     format: 'a4',
+ *   });
+ *
+ *   const handleExport = () => {
+ *     const items = [
+ *       { content: document.getElementById('section1'), pageCount: 2 },
+ *       { content: '<div>Custom HTML</div>', pageCount: 1 },
+ *     ];
+ *     generateBatchPDF(items, 'batch-report.pdf');
+ *   };
+ * </script>
+ *
+ * <button on:click={handleExport} disabled={$isGenerating}>
+ *   {$isGenerating ? `Generating... ${$progress}%` : 'Generate Batch PDF'}
+ * </button>
+ * ```
+ */
+export function createBatchPDFGenerator(
+  options: Partial<PDFGeneratorOptions> = {}
+): SvelteBatchPDFGeneratorReturn {
+  const isGenerating = writable(false);
+  const progress = writable(0);
+  const error = writable<Error | null>(null);
+  const result = writable<BatchPDFGenerationResult | null>(null);
+
+  const generateBatch = async (
+    items: PDFContentItem[],
+    filename: string = 'batch-document.pdf'
+  ): Promise<BatchPDFGenerationResult | null> => {
+    try {
+      isGenerating.set(true);
+      error.set(null);
+
+      const res = await generateBatchPDF(items, filename, {
+        ...options,
+        onProgress: (p) => {
+          progress.set(p);
+          options.onProgress?.(p);
+        },
+        onError: (e) => {
+          error.set(e);
+          options.onError?.(e);
+        },
+        onComplete: (blob) => {
+          options.onComplete?.(blob);
+        },
+      });
+      result.set(res);
+      return res;
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      error.set(err);
+      return null;
+    } finally {
+      isGenerating.set(false);
+    }
+  };
+
+  const generateBlob = async (
+    items: PDFContentItem[]
+  ): Promise<BatchPDFGenerationResult | null> => {
+    try {
+      isGenerating.set(true);
+      error.set(null);
+
+      const res = await generateBatchPDFBlob(items, {
+        ...options,
+        onProgress: (p) => {
+          progress.set(p);
+          options.onProgress?.(p);
+        },
+        onError: (e) => {
+          error.set(e);
+          options.onError?.(e);
+        },
+        onComplete: (blob) => {
+          options.onComplete?.(blob);
+        },
+      });
+      result.set(res);
+      return res;
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      error.set(err);
+      return null;
+    } finally {
+      isGenerating.set(false);
+    }
+  };
+
+  const reset = () => {
+    progress.set(0);
+    error.set(null);
+    result.set(null);
+  };
+
+  return {
+    generateBatchPDF: generateBatch,
+    generateBatchBlob: generateBlob,
     isGenerating: { subscribe: isGenerating.subscribe },
     progress: { subscribe: progress.subscribe },
     error: { subscribe: error.subscribe },
