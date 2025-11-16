@@ -1,5 +1,194 @@
 # PDF Generator Library - Changelog
 
+## [5.0.0] - 2025-11-16 - Phase 3 Advanced Features
+
+### Major Release: Phase 3 Advanced Features
+
+This release completes the feature roadmap with advanced PDF generation capabilities including security, async processing, real-time preview, and URL conversion.
+
+#### 1. PDF Security & Encryption Configuration
+
+**Security Settings:**
+- User password (required to open PDF)
+- Owner password (required to modify permissions)
+- Granular permission controls:
+  - Printing (none, low resolution, high resolution)
+  - Document modification
+  - Text and graphics copying
+  - Annotation adding
+  - Form filling
+  - Content accessibility
+  - Document assembly
+- Encryption strength (128-bit or 256-bit)
+
+**Usage:**
+```typescript
+{
+  securityOptions: {
+    enabled: true,
+    userPassword: 'open-password',
+    ownerPassword: 'permissions-password',
+    permissions: {
+      printing: 'highResolution',
+      modifying: false,
+      copying: false,
+      annotating: true
+    },
+    encryptionStrength: 256
+  }
+}
+```
+
+**Note:** Settings are stored in `pdf.__securityOptions` for server-side post-processing. Browser-based jsPDF doesn't support native encryption.
+
+#### 2. Async Processing with Webhooks
+
+**Features:**
+- Non-blocking PDF generation
+- HTTP webhook notifications on completion/failure
+- Job ID tracking system
+- Custom webhook headers support
+- Progress URL callbacks
+
+**New Methods:**
+- `generatePDFAsync(element, filename)` - Start async generation
+- `generateJobId()` - Generate unique job ID
+- `sendWebhook(url, data)` - Send HTTP webhook
+
+**Usage:**
+```typescript
+const generator = new PDFGenerator({
+  asyncOptions: {
+    enabled: true,
+    webhookUrl: 'https://api.example.com/pdf-ready',
+    webhookHeaders: {
+      'Authorization': 'Bearer token'
+    },
+    jobId: 'custom-job-id'
+  }
+});
+
+const { jobId, status } = await generator.generatePDFAsync(element, 'report.pdf');
+```
+
+**Webhook Payload:**
+```json
+{
+  "jobId": "pdf-1234567890-abc",
+  "status": "completed",
+  "result": {
+    "pageCount": 5,
+    "fileSize": 423567,
+    "generationTime": 1823
+  },
+  "timestamp": "2025-11-16T12:34:56.789Z"
+}
+```
+
+#### 3. Real-time Preview Component (React)
+
+**New Components:**
+- `<PDFPreview>` - React component for live preview
+- `usePDFPreview()` - Hook for programmatic control
+
+**Features:**
+- Real-time preview updates
+- Debounced re-generation (default 500ms)
+- Quality and scale controls
+- Loading and error states
+- Memory-efficient blob URL management
+- Automatic cleanup on unmount
+
+**Component Usage:**
+```typescript
+import { PDFPreview } from '@encryptioner/html-to-pdf-generator/react';
+
+<PDFPreview
+  content={elementOrHTMLString}
+  debounce={500}
+  quality={0.7}
+  scale={1.5}
+  loadingPlaceholder={<div>Generating...</div>}
+  onError={(error) => console.error(error)}
+/>
+```
+
+**Hook Usage:**
+```typescript
+import { usePDFPreview } from '@encryptioner/html-to-pdf-generator/react';
+
+const {
+  generatePreview,
+  isGenerating,
+  error,
+  previewUrl,
+  clearPreview
+} = usePDFPreview({ format: 'a4' });
+
+const url = await generatePreview(element);
+```
+
+#### 4. URL to PDF Conversion
+
+**New Method:**
+- `generatePDFFromURL(url, filename, options)` - Convert web pages to PDF
+
+**Features:**
+- Client-side URL conversion via iframe
+- Wait for specific CSS selectors
+- Inject custom CSS before capture
+- Execute custom JavaScript
+- Configurable timeout (default 10s)
+- CORS-aware with clear error messages
+- Automatic cleanup on completion/error
+
+**Usage:**
+```typescript
+const generator = new PDFGenerator();
+
+await generator.generatePDFFromURL(
+  'https://example.com/page',
+  'webpage.pdf',
+  {
+    waitForSelector: '.content-loaded',
+    timeout: 10000,
+    injectCSS: '.no-print { display: none; }',
+    injectJS: 'console.log("Ready");'
+  }
+);
+```
+
+**Limitations:**
+- CORS restrictions (same-origin or CORS-enabled URLs only)
+- No dynamic loading support
+- Limited control over page state
+
+**Production Recommendation:** For production URL-to-PDF, use server-side solutions like Puppeteer, Playwright, or cloud services.
+
+### Type System Enhancements
+
+**New Interfaces:**
+- `PDFSecurityOptions` - Security and encryption settings
+- `PDFSecurityPermissions` - Granular permissions
+- `AsyncProcessingOptions` - Async processing configuration
+- `PreviewOptions` - Preview component settings
+- `URLToPDFOptions` - URL conversion options
+
+**Updated Types:**
+- `PDFGeneratorOptions` - Added securityOptions, asyncOptions, previewOptions
+
+### Breaking Changes
+
+None. All new features are opt-in via new options.
+
+### Migration Guide
+
+No migration needed. All existing code continues to work. New features are available through:
+- Security: Add `securityOptions` to options
+- Async: Use `generatePDFAsync()` method
+- Preview: Import `PDFPreview` or `usePDFPreview` from `/react`
+- URL: Use `generatePDFFromURL()` method
+
 ## [4.1.1] - 2025-11-13 - Switch to html2canvas-pro
 
 ### Breaking Change: html2canvas-pro Integration

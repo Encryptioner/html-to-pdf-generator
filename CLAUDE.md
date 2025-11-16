@@ -462,6 +462,255 @@ Create PDF outline for easy navigation (utils.ts:697-732):
 
 **Note:** Full bookmark implementation in core.ts requires jsPDF outline API integration (Phase 3 enhancement).
 
+### Phase 3 Features (Implemented in v5.0.0)
+
+#### PDF Security/Encryption
+
+Configure PDF security settings for password protection and permissions (core.ts:700-749):
+
+**Features:**
+- User password (required to open PDF)
+- Owner password (required to modify permissions)
+- Granular permission controls
+- 128-bit or 256-bit encryption strength
+- Settings stored for post-processing
+
+**Permissions:**
+- Printing (none, low resolution, high resolution)
+- Modifying document
+- Copying text and graphics
+- Adding annotations
+- Filling forms
+- Content accessibility
+- Document assembly
+
+**Usage:**
+```typescript
+{
+  securityOptions: {
+    enabled: true,
+    userPassword: 'open-password',
+    ownerPassword: 'permissions-password',
+    permissions: {
+      printing: 'highResolution',
+      modifying: false,
+      copying: false,
+      annotating: true,
+      fillingForms: true,
+      contentAccessibility: true,
+      documentAssembly: false
+    },
+    encryptionStrength: 256
+  }
+}
+```
+
+**Implementation:**
+- Security settings stored in PDF metadata via `applyPDFSecurity()`
+- Actual encryption requires external tools (pdf-lib, PyPDF2, Adobe SDK)
+- Settings available in `pdf.__securityOptions` for post-processing
+
+**Note:** Browser-based jsPDF doesn't support native encryption. For production use, apply encryption server-side.
+
+#### Async Processing with Webhooks
+
+Background PDF generation with webhook notifications (core.ts:111-189):
+
+**Features:**
+- Non-blocking PDF generation
+- Webhook notifications on completion/failure
+- Job ID tracking
+- Custom webhook headers
+- Progress URL callbacks
+
+**Usage:**
+```typescript
+const generator = new PDFGenerator({
+  asyncOptions: {
+    enabled: true,
+    webhookUrl: 'https://api.example.com/pdf-ready',
+    webhookHeaders: {
+      'Authorization': 'Bearer token',
+      'X-Custom-Header': 'value'
+    },
+    jobId: 'custom-job-id',  // Optional
+    progressUrl: 'https://api.example.com/progress'
+  }
+});
+
+const { jobId, status } = await generator.generatePDFAsync(element, 'report.pdf');
+console.log(`Job ${jobId} started with status: ${status}`);
+```
+
+**Webhook Payload (Success):**
+```json
+{
+  "jobId": "pdf-1234567890-abc",
+  "status": "completed",
+  "result": {
+    "pageCount": 5,
+    "fileSize": 423567,
+    "generationTime": 1823
+  },
+  "timestamp": "2025-11-16T12:34:56.789Z"
+}
+```
+
+**Webhook Payload (Error):**
+```json
+{
+  "jobId": "pdf-1234567890-abc",
+  "status": "failed",
+  "error": "Failed to load images",
+  "timestamp": "2025-11-16T12:34:56.789Z"
+}
+```
+
+**Methods:**
+- `generatePDFAsync(element, filename)` - Start async generation
+- `generateJobId()` - Generate unique job ID
+- `sendWebhook(url, data)` - Send webhook notification
+
+#### Real-time Preview Component
+
+Live PDF preview for React applications (src/adapters/react/PDFPreview.tsx):
+
+**Features:**
+- Real-time PDF preview updates
+- Debounced re-generation
+- Quality and scale controls
+- Loading and error states
+- Memory-efficient blob URL management
+
+**Usage (Component):**
+```typescript
+import { PDFPreview } from 'html-to-pdf-generator/react';
+
+function App() {
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <div>
+      <div ref={contentRef}>
+        <h1>My Document</h1>
+        <p>Content goes here</p>
+      </div>
+
+      <PDFPreview
+        content={contentRef.current}
+        debounce={500}
+        quality={0.7}
+        scale={1.5}
+        className="preview-container"
+        style={{ width: '600px', height: '800px' }}
+        loadingPlaceholder={<div>Generating preview...</div>}
+        onError={(error) => console.error(error)}
+      />
+    </div>
+  );
+}
+```
+
+**Usage (Hook):**
+```typescript
+import { usePDFPreview } from 'html-to-pdf-generator/react';
+
+function App() {
+  const { generatePreview, isGenerating, error, previewUrl, clearPreview } = usePDFPreview({
+    format: 'a4',
+    margins: [10, 10, 10, 10]
+  });
+
+  const handlePreview = async () => {
+    const element = document.getElementById('content');
+    const url = await generatePreview(element);
+    console.log('Preview URL:', url);
+  };
+
+  return (
+    <div>
+      <button onClick={handlePreview} disabled={isGenerating}>
+        Generate Preview
+      </button>
+      {previewUrl && <iframe src={previewUrl} />}
+      {error && <div>Error: {error.message}</div>}
+    </div>
+  );
+}
+```
+
+**Props:**
+- `content` - HTML element or string to preview
+- `options` - PDF generator options
+- `debounce` - Debounce delay (default: 500ms)
+- `quality` - Preview quality 0.1-1.0 (default: 0.7)
+- `scale` - Scale factor (default: 1)
+- `className` / `style` - Container styling
+- `loadingPlaceholder` - Custom loading UI
+- `onError` - Error handler
+
+**Implementation:**
+- Uses PDFGenerator.generateBlob() for preview
+- Manages blob URL lifecycle
+- Debounced updates for performance
+- Automatic cleanup on unmount
+
+#### URL to PDF Conversion
+
+Client-side URL to PDF conversion with limitations (core.ts:191-308):
+
+**Features:**
+- Convert any URL to PDF
+- Wait for specific selectors
+- Inject custom CSS/JS
+- Timeout configuration
+- CORS-aware
+
+**Usage:**
+```typescript
+const generator = new PDFGenerator();
+
+await generator.generatePDFFromURL(
+  'https://example.com/page',
+  'webpage.pdf',
+  {
+    waitForSelector: '.content-loaded',
+    timeout: 10000,
+    injectCSS: `
+      .no-print { display: none; }
+      body { font-size: 14px; }
+    `,
+    injectJS: `
+      console.log('Injected script running');
+    `
+  }
+);
+```
+
+**Options:**
+- `waitForSelector` - CSS selector to wait for before capture
+- `timeout` - Maximum wait time in milliseconds (default: 10000)
+- `injectCSS` - Custom CSS to inject into page
+- `injectJS` - Custom JavaScript to execute
+
+**Limitations:**
+- **CORS restrictions** - Only works with same-origin or CORS-enabled URLs
+- **No dynamic loading** - Cannot wait for network requests
+- **Limited control** - Cannot handle complex page states
+
+**Production Recommendation:**
+For production URL-to-PDF, use server-side solutions:
+- **Puppeteer** - Full Chrome automation
+- **Playwright** - Cross-browser support
+- **wkhtmltopdf** - Lightweight CLI tool
+- **Cloud services** - PDFShift, CloudConvert, etc.
+
+**Client-side Use Cases:**
+- Same-origin pages only
+- Simple static content
+- Development/testing
+- Preview generation
+
 ## Package Structure for NPM
 
 ```

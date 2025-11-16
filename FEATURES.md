@@ -219,6 +219,168 @@ bookmarkOptions: {
 }
 ```
 
+### Phase 3 Features (v5.0.0)
+
+#### PDF Security & Encryption Configuration
+- ✅ **User Password** - Require password to open PDF
+- ✅ **Owner Password** - Require password to modify permissions
+- ✅ **Permission Controls** - Granular control over document usage
+- ✅ **Printing Control** - None, low resolution, or high resolution
+- ✅ **Modification Protection** - Prevent document editing
+- ✅ **Copy Protection** - Disable text/graphics copying
+- ✅ **Annotation Control** - Allow/deny adding annotations
+- ✅ **Form Filling** - Control form field filling
+- ✅ **Accessibility** - Content accessibility for screen readers
+- ✅ **Document Assembly** - Control page insertion/rotation
+- ✅ **Encryption Strength** - 128-bit or 256-bit encryption
+- ✅ **Settings Storage** - Stored for post-processing
+
+**API:**
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'open-password',
+  ownerPassword: 'permissions-password',
+  permissions: {
+    printing: 'highResolution',
+    modifying: false,
+    copying: false,
+    annotating: true,
+    fillingForms: true,
+    contentAccessibility: true,
+    documentAssembly: false
+  },
+  encryptionStrength: 256
+}
+```
+
+**Note:** Browser-based jsPDF doesn't support native encryption. Settings are stored in `pdf.__securityOptions` for server-side post-processing using pdf-lib, PyPDF2, or Adobe SDK.
+
+#### Async Processing with Webhooks
+- ✅ **Non-Blocking Generation** - Background PDF generation
+- ✅ **Webhook Notifications** - HTTP callbacks on completion/failure
+- ✅ **Job ID Tracking** - Unique job identifiers
+- ✅ **Custom Headers** - Add authorization and custom headers
+- ✅ **Progress Callbacks** - Optional progress URL updates
+- ✅ **Success Payload** - Includes page count, file size, generation time
+- ✅ **Error Payload** - Detailed error information
+- ✅ **Automatic Retry** - Built-in fetch error handling
+
+**API:**
+```typescript
+const generator = new PDFGenerator({
+  asyncOptions: {
+    enabled: true,
+    webhookUrl: 'https://api.example.com/pdf-ready',
+    webhookHeaders: {
+      'Authorization': 'Bearer token'
+    },
+    jobId: 'custom-job-id',  // Optional
+    progressUrl: 'https://api.example.com/progress'
+  }
+});
+
+const { jobId, status } = await generator.generatePDFAsync(element, 'report.pdf');
+```
+
+**Webhook Response:**
+```json
+{
+  "jobId": "pdf-1234567890-abc",
+  "status": "completed",
+  "result": {
+    "pageCount": 5,
+    "fileSize": 423567,
+    "generationTime": 1823
+  },
+  "timestamp": "2025-11-16T12:34:56.789Z"
+}
+```
+
+#### Real-time Preview Component (React)
+- ✅ **Live PDF Preview** - Real-time preview updates
+- ✅ **Debounced Updates** - Configurable debounce delay (default 500ms)
+- ✅ **Quality Control** - Preview quality adjustment (0.1-1.0)
+- ✅ **Scale Control** - Preview scale factor
+- ✅ **Loading States** - Built-in loading indicator
+- ✅ **Error Handling** - Graceful error display
+- ✅ **Memory Management** - Automatic blob URL cleanup
+- ✅ **Custom Styling** - className and style props
+- ✅ **Loading Placeholder** - Custom loading UI
+- ✅ **Hook Alternative** - `usePDFPreview` for programmatic control
+
+**Component API:**
+```typescript
+import { PDFPreview } from '@encryptioner/html-to-pdf-generator/react';
+
+<PDFPreview
+  content={elementOrHTMLString}
+  debounce={500}
+  quality={0.7}
+  scale={1.5}
+  className="preview-container"
+  style={{ width: '600px', height: '800px' }}
+  loadingPlaceholder={<div>Generating...</div>}
+  onError={(error) => console.error(error)}
+/>
+```
+
+**Hook API:**
+```typescript
+import { usePDFPreview } from '@encryptioner/html-to-pdf-generator/react';
+
+const {
+  generatePreview,
+  isGenerating,
+  error,
+  previewUrl,
+  clearPreview
+} = usePDFPreview({
+  format: 'a4',
+  margins: [10, 10, 10, 10]
+});
+
+const url = await generatePreview(element);
+```
+
+#### URL to PDF Conversion
+- ✅ **URL Conversion** - Convert web pages to PDF client-side
+- ✅ **Selector Waiting** - Wait for specific CSS selectors
+- ✅ **Timeout Control** - Configurable timeout (default 10s)
+- ✅ **CSS Injection** - Inject custom CSS before capture
+- ✅ **JavaScript Injection** - Execute custom JavaScript
+- ✅ **CORS Aware** - Clear error messages for CORS issues
+- ✅ **Iframe Based** - Uses hidden iframe for loading
+- ✅ **Automatic Cleanup** - Cleanup on completion/error
+
+**API:**
+```typescript
+const generator = new PDFGenerator();
+
+await generator.generatePDFFromURL(
+  'https://example.com/page',
+  'webpage.pdf',
+  {
+    waitForSelector: '.content-loaded',
+    timeout: 10000,
+    injectCSS: '.no-print { display: none; }',
+    injectJS: 'console.log("Ready");'
+  }
+);
+```
+
+**Limitations:**
+- **CORS restrictions** - Only same-origin or CORS-enabled URLs
+- **No dynamic loading** - Cannot wait for network requests
+- **Limited control** - Basic page state management
+
+**Production Recommendation:**
+For production URL-to-PDF, use server-side solutions:
+- Puppeteer (Node.js)
+- Playwright (cross-browser)
+- wkhtmltopdf (CLI)
+- Cloud services (PDFShift, CloudConvert)
+
 ### 1. Multi-Page PDF Generation
 - ✅ **Smart Continuous Pagination** - No awkward content cuts or large bottom spaces
 - ✅ **Single-Page Optimization** - Content that fits on one page renders as single-page PDF
@@ -517,27 +679,37 @@ The library is structured for easy extraction as an NPM package:
 
 ## 📈 Future Enhancements (Potential)
 
-- 🔮 Custom HTML headers/footers (with rendering)
-- 🔮 Table of contents generation
-- 🔮 Watermark support
-- 🔮 Encrypted PDFs
+- ✅ ~~Custom HTML headers/footers (with rendering)~~ - IMPLEMENTED (v4.0.0)
+- ✅ ~~Table of contents generation~~ - IMPLEMENTED (v4.0.0)
+- ✅ ~~Watermark support~~ - IMPLEMENTED (v4.0.0)
+- ✅ ~~Encrypted PDFs~~ - IMPLEMENTED (v5.0.0, configuration only)
+- ✅ ~~Font embedding~~ - IMPLEMENTED (v4.0.0)
+- ✅ ~~Print-specific CSS support~~ - IMPLEMENTED (v4.0.0)
 - 🔮 Digital signatures
 - 🔮 Better SVG support (native rendering)
-- 🔮 Font embedding
 - 🔮 Parallel page generation
 - 🔮 Progressive rendering
-- 🔮 Print-specific CSS support
+- 🔮 PDF/A compliance
+- 🔮 Form field support
+- 🔮 Multi-column layouts
 
 ## ✨ Summary
 
 This is a **production-ready** PDF generation library with:
 
-- ✅ **39+ exported functions/classes**
-- ✅ **10+ major feature categories**
+- ✅ **50+ exported functions/classes**
+- ✅ **15+ major feature categories**
 - ✅ **Full TypeScript support**
+- ✅ **Framework adapters** (React, Vue, Svelte, Vanilla JS)
+- ✅ **Advanced features** (Security, Async, Preview, Templates)
 - ✅ **Comprehensive documentation**
 - ✅ **Real-world examples**
 - ✅ **Performance optimized**
 - ✅ **NPM package ready**
 
-Perfect for generating professional PDFs from HTML content in React applications!
+**Version 5.0.0** includes:
+- 🎯 Phase 1: Watermarks, Headers/Footers, Metadata, Print CSS, Batch Generation
+- 🎯 Phase 2: Templates, Fonts, TOC, Bookmarks
+- 🎯 Phase 3: Security, Async Processing, Preview Component, URL to PDF
+
+Perfect for generating professional PDFs from HTML content across all major frameworks!

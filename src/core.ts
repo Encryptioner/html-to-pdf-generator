@@ -1049,8 +1049,7 @@ export class PDFGenerator {
     const tocHTML = generateTOCHTML(hierarchy, {
       title: tocOptions.title || 'Table of Contents',
       includePageNumbers: tocOptions.includePageNumbers ?? false, // Disable page numbers for now
-      indentPerLevel: tocOptions.indentPerLevel || 10,
-      enableLinks: tocOptions.enableLinks ?? true
+      indentPerLevel: tocOptions.indentPerLevel || 10
     });
 
     // Generate TOC CSS

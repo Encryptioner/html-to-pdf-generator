@@ -1,6 +1,6 @@
 {
   "name": "@encryptioner/html-to-pdf-generator",
-  "version": "1.0.0",
+  "version": "5.0.0",
   "description": "Modern multi-page PDF generator from HTML content with smart pagination and styling support",
   "keywords": [
     "pdf",
@@ -39,9 +39,15 @@
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
-      "react": ["./dist/react.d.ts"],
-      "vue": ["./dist/vue.d.ts"],
-      "svelte": ["./dist/svelte.d.ts"]
+      "react": [
+        "./dist/react.d.ts"
+      ],
+      "vue": [
+        "./dist/vue.d.ts"
+      ],
+      "svelte": [
+        "./dist/svelte.d.ts"
+      ]
     }
   },
   "exports": {
@@ -88,8 +94,8 @@
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "vue": "^3.0.0",
-    "svelte": "^4.0.0 || ^5.0.0"
+    "svelte": "^4.0.0 || ^5.0.0",
+    "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -106,6 +112,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

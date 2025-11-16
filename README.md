@@ -7,15 +7,33 @@
 
 ## Features
 
+### Core Features
 ✅ Multi-page PDFs with smart pagination
 ✅ Framework adapters (React, Vue, Svelte, Vanilla JS)
-✅ OKLCH color support & Tailwind CSS compatible
+✅ OKLCH color support & Tailwind CSS v4 compatible
 ✅ Image optimization & SVG conversion
 ✅ Table pagination with header repetition
-✅ Watermarks, headers/footers, metadata
-✅ Template system with loops & conditionals
 ✅ Full TypeScript support
-✅ Progress tracking
+✅ Progress tracking & callbacks
+
+### Phase 1 Features
+✅ Text & image watermarks
+✅ Dynamic headers/footers with templates
+✅ PDF metadata (title, author, keywords, etc.)
+✅ Print media CSS emulation
+✅ Batch PDF generation with auto-scaling
+
+### Phase 2 Features
+✅ Template system (variables, loops, conditionals)
+✅ Custom font handling & web-safe fallbacks
+✅ Auto-generated Table of Contents
+✅ PDF bookmarks/outline support
+
+### Phase 3 Features
+✅ PDF security & encryption configuration
+✅ Async processing with webhooks
+✅ Real-time preview component (React)
+✅ URL to PDF conversion
 
 ## Quick Start
 
@@ -127,6 +145,10 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 - **[Fonts](./documentation/advanced/fonts.md)** - Custom font handling
 - **[Table of Contents](./documentation/advanced/table-of-contents.md)** - Auto-generate TOC
 - **[Bookmarks](./documentation/advanced/bookmarks.md)** - PDF navigation
+- **[Security & Encryption](./documentation/advanced/security.md)** - Password protection & permissions
+- **[Async Processing](./documentation/advanced/async-processing.md)** - Background generation with webhooks
+- **[Preview Component](./documentation/advanced/preview.md)** - Real-time PDF preview (React)
+- **[URL to PDF](./documentation/advanced/url-to-pdf.md)** - Convert web pages to PDF
 
 ### API Reference
 - **[Options Reference](./documentation/api/options.md)** - All configuration options
