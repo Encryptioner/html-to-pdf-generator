@@ -1,5 +1,93 @@
 # PDF Generator Library - Changelog
 
+## [5.1.0] - 2025-11-16 - Phase 4 Production Quality
+
+### Phase 4: Production Quality Enhancements
+
+This release focuses on production-ready image quality with enhanced DPI control, transparency handling, and critical bug fixes.
+
+#### 1. Enhanced Image Optimization with DPI Control
+
+**New ImageProcessingOptions:**
+- `dpi?: number` - DPI control for print quality (72 = web, 150 = print, 300 = high-quality)
+- `format?: 'jpeg' | 'png' | 'webp'` - Image format selection
+- `backgroundColor?: string` - Background color for transparent images (default: '#ffffff')
+- `interpolate?: boolean` - Control image smoothing to prevent blur (default: true)
+- `optimizeForPrint?: boolean` - Enable print-quality optimizations
+
+**Usage:**
+```typescript
+import { optimizeImage, getRecommendedDPI } from 'html-to-pdf-generator';
+
+const optimizedSrc = await optimizeImage(imgElement, {
+  dpi: 300,
+  format: 'jpeg',
+  backgroundColor: '#ffffff',
+  optimizeForPrint: true,
+  quality: 0.92
+});
+```
+
+#### 2. New Utility Functions
+
+- `calculateDPIDimensions(widthInches, heightInches, dpi)` - Calculate pixel dimensions for given DPI
+- `getRecommendedDPI(useCase)` - Get recommended DPI for use case ('web' | 'print' | 'high-quality-print')
+- `hasTransparency(img)` - Detect if image has transparent pixels
+
+#### 3. Critical Bug Fix: Black Background on Transparent Images
+
+**Problem:** Transparent images were rendering with black backgrounds when converted to JPEG format.
+
+**Root Cause:** Canvas wasn't filled with background color before drawing the image, causing transparent areas to appear black in JPEG (which doesn't support transparency).
+
+**Fix:** Fill canvas with white background BEFORE drawing image in both `optimizeImage()` and `imageToDataURL()` functions:
+```typescript
+if (format === 'jpeg' || backgroundColor !== 'transparent') {
+  ctx.fillStyle = backgroundColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+```
+
+**Impact:** All PDFs with transparent images (PNG with transparency, SVG with transparent backgrounds) will now render correctly with white backgrounds instead of black.
+
+#### 4. Accessibility Documentation
+
+Added comprehensive documentation noting that our library already supports searchable text in PDFs because we use jsPDF's native text rendering (not image-based screenshots). This makes all generated PDFs:
+- Fully searchable with browser/PDF reader search
+- Accessible to screen readers
+- Selectable and copyable text
+- SEO-friendly (for web-based PDF viewers)
+
+### Updated Exports
+
+All framework adapters (React, Vue, Svelte) now export:
+- New Phase 4 utility functions (`calculateDPIDimensions`, `getRecommendedDPI`, `hasTransparency`)
+- All Phase 3 types (`PDFSecurityOptions`, `PDFSecurityPermissions`, `AsyncProcessingOptions`, `PreviewOptions`, `URLToPDFOptions`)
+
+### Migration Guide
+
+No breaking changes. All new features are additive and backwards compatible.
+
+To use new image optimization features:
+```typescript
+// Before (still works)
+const generator = new PDFGenerator({ imageQuality: 0.85 });
+
+// After (enhanced control)
+const generator = new PDFGenerator({
+  imageOptions: {
+    dpi: 300,
+    format: 'jpeg',
+    backgroundColor: '#ffffff',
+    optimizeForPrint: true,
+    quality: 0.92
+  }
+});
+```
+
+---
+
 ## [5.0.0] - 2025-11-16 - Phase 3 Advanced Features
 
 ### Major Release: Phase 3 Advanced Features

@@ -45,6 +45,11 @@ export type {
   TOCEntry,
   BookmarkOptions,
   BookmarkEntry,
+  PDFSecurityOptions,
+  PDFSecurityPermissions,
+  AsyncProcessingOptions,
+  PreviewOptions,
+  URLToPDFOptions,
 } from '../../types';
 
 // Re-export utility functions
@@ -95,6 +100,9 @@ export {
   imageToDataURL,
   isDataURL,
   estimateImageSize,
+  calculateDPIDimensions,
+  getRecommendedDPI,
+  hasTransparency,
 } from '../../image-handler';
 export type { ImageProcessingOptions } from '../../image-handler';
 

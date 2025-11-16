@@ -105,6 +105,9 @@ export {
   imageToDataURL,
   isDataURL,
   estimateImageSize,
+  calculateDPIDimensions,
+  getRecommendedDPI,
+  hasTransparency,
 } from '../../image-handler';
 export type { ImageProcessingOptions } from '../../image-handler';
 

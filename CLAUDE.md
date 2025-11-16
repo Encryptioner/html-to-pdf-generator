@@ -711,6 +711,111 @@ For production URL-to-PDF, use server-side solutions:
 - Development/testing
 - Preview generation
 
+### Phase 4 Features (Implemented in v5.1.0)
+
+#### Enhanced Image Optimization with DPI Control
+
+Advanced image processing with print-quality DPI support and transparency handling (src/image-handler.ts):
+
+**Extended ImageProcessingOptions:**
+```typescript
+interface ImageProcessingOptions {
+  maxWidth?: number;
+  maxHeight?: number;
+  quality?: number;
+  compress?: boolean;
+  grayscale?: boolean;
+  dpi?: number;                    // NEW: 72 (web), 150 (print), 300 (high-quality)
+  format?: 'jpeg' | 'png' | 'webp'; // NEW: Format selection
+  backgroundColor?: string;         // NEW: Background for transparent images (default: '#ffffff')
+  interpolate?: boolean;           // NEW: Control image smoothing (default: true)
+  optimizeForPrint?: boolean;      // NEW: Enable print-quality optimizations
+}
+```
+
+**Features:**
+- DPI-based scaling for print quality (72 DPI = web, 150 DPI = standard print, 300 DPI = high-quality print)
+- Format selection (JPEG, PNG, WebP) with quality control
+- Background color fill for transparent images (prevents black backgrounds in JPEG)
+- Interpolation control to prevent blur
+- Print optimization mode
+
+**Usage:**
+```typescript
+import { optimizeImage, getRecommendedDPI } from 'html-to-pdf-generator';
+
+// Optimize for print quality
+const optimizedSrc = await optimizeImage(imgElement, {
+  dpi: 300,
+  format: 'jpeg',
+  backgroundColor: '#ffffff',
+  optimizeForPrint: true,
+  interpolate: true,
+  quality: 0.92
+});
+
+// Or use recommended DPI
+const dpi = getRecommendedDPI('high-quality-print'); // Returns 300
+```
+
+**Critical Bug Fix:**
+Fixed black background issue when converting transparent images to JPEG format. The fix ensures canvas is filled with background color BEFORE drawing the image:
+
+```typescript
+// In optimizeImage() and imageToDataURL()
+if (format === 'jpeg' || backgroundColor !== 'transparent') {
+  ctx.fillStyle = backgroundColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+```
+
+**New Utility Functions:**
+- `calculateDPIDimensions(widthInches, heightInches, dpi)` - Calculate pixel dimensions for given DPI
+- `getRecommendedDPI(useCase)` - Get recommended DPI ('web' → 72, 'print' → 150, 'high-quality-print' → 300)
+- `hasTransparency(img)` - Detect if image has transparent pixels
+
+**Implementation Details (image-handler.ts:111-382):**
+1. **DPI Scaling** (lines 135-139):
+   - Calculate DPI scale factor: `dpi / 72`
+   - Apply to final dimensions for print quality
+
+2. **Interpolation Control** (lines 156-161):
+   - Disable for pixel-perfect rendering
+   - Enable with 'high' quality for smooth scaling
+
+3. **Background Fill** (lines 165-168):
+   - Fill canvas BEFORE drawing image
+   - Prevents transparent areas from becoming black
+
+4. **Format Selection** (line 189):
+   - Support JPEG, PNG, WebP
+   - Appropriate MIME type selection
+
+**Integration with PDF Generation:**
+All image processing options are available in PDFGeneratorOptions for automatic application during PDF generation:
+
+```typescript
+const generator = new PDFGenerator({
+  imageOptions: {
+    dpi: 300,
+    format: 'jpeg',
+    backgroundColor: '#ffffff',
+    optimizeForPrint: true,
+    quality: 0.92
+  }
+});
+```
+
+**Accessibility Note:**
+Our library already supports searchable text in PDFs because we use jsPDF's native text rendering (not image-based screenshots). This makes all generated PDFs:
+- Fully searchable with browser/PDF reader search
+- Accessible to screen readers
+- Selectable and copyable text
+- SEO-friendly (for web-based PDF viewers)
+
+Unlike screenshot-based solutions (Puppeteer screenshots, PhantomJS), our approach maintains text as actual text elements in the PDF, ensuring maximum accessibility and usability.
+
 ## Package Structure for NPM
 
 ```
