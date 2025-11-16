@@ -29,12 +29,14 @@ const parentDir = join(__dirname, '..', '..');
 // This will be properly resolved when the package is installed
 let PDFGenerator: any;
 let generatePDFBlob: any;
+let generateBatchPDF: any;
 
 try {
   // Try to import from the parent dist folder
   const coreModule = await import(join(parentDir, 'dist', 'index.js'));
   PDFGenerator = coreModule.PDFGenerator;
   generatePDFBlob = coreModule.generatePDFBlob;
+  generateBatchPDF = coreModule.generateBatchPDF;
 } catch (error) {
   console.error('Failed to load PDF generator core library:', error);
   console.error('Please ensure the main package is built: pnpm run build');
@@ -83,6 +85,10 @@ class PDFMCPServer {
         switch (name) {
           case 'generate_pdf':
             return await this.handleGeneratePDF(args);
+          case 'generate_batch_pdf':
+            return await this.handleGenerateBatchPDF(args);
+          case 'generate_pdf_from_url':
+            return await this.handleGeneratePDFFromURL(args);
           default:
             throw new Error(`Unknown tool: ${name}`);
         }
@@ -105,98 +111,183 @@ class PDFMCPServer {
    * Get list of available tools with descriptions
    */
   private getTools(): Tool[] {
+    // Common PDF options schema (reusable across tools)
+    const pdfOptionsSchema = {
+      type: 'object',
+      description: 'PDF generation options',
+      properties: {
+        format: {
+          type: 'string',
+          enum: ['a4', 'letter', 'a3', 'legal'],
+          description: 'Paper format (default: a4)',
+        },
+        orientation: {
+          type: 'string',
+          enum: ['portrait', 'landscape'],
+          description: 'Page orientation (default: portrait)',
+        },
+        margins: {
+          type: 'array',
+          items: { type: 'number' },
+          minItems: 4,
+          maxItems: 4,
+          description: 'Margins in mm: [top, right, bottom, left] (default: [10, 10, 10, 10])',
+        },
+        showPageNumbers: {
+          type: 'boolean',
+          description: 'Show page numbers (default: false)',
+        },
+        scale: {
+          type: 'number',
+          description: 'Scale factor 1-4, higher = better quality (default: 2)',
+        },
+        imageQuality: {
+          type: 'number',
+          description: 'Image quality 0-1 (default: 0.85)',
+        },
+        watermark: {
+          type: 'object',
+          description: 'Add text or image watermark',
+          properties: {
+            text: { type: 'string', description: 'Watermark text' },
+            image: { type: 'string', description: 'Watermark image (data URL or base64)' },
+            opacity: { type: 'number', description: 'Opacity 0-1 (default: 0.3)' },
+            fontSize: { type: 'number', description: 'Font size in px (default: 48)' },
+            color: { type: 'string', description: 'Text color (default: #cccccc)' },
+            position: {
+              type: 'string',
+              enum: ['center', 'diagonal', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+              description: 'Position (default: diagonal)',
+            },
+            allPages: { type: 'boolean', description: 'Apply to all pages (default: true)' },
+          },
+        },
+        headerTemplate: {
+          type: 'object',
+          description: 'Add header to pages',
+          properties: {
+            template: { type: 'string', description: 'Header template with variables: {{pageNumber}}, {{totalPages}}, {{date}}, {{title}}' },
+            height: { type: 'number', description: 'Header height in mm (default: 20)' },
+            firstPage: { type: 'boolean', description: 'Show on first page (default: false)' },
+          },
+        },
+        footerTemplate: {
+          type: 'object',
+          description: 'Add footer to pages',
+          properties: {
+            template: { type: 'string', description: 'Footer template with variables: {{pageNumber}}, {{totalPages}}, {{date}}, {{title}}' },
+            height: { type: 'number', description: 'Footer height in mm (default: 20)' },
+            firstPage: { type: 'boolean', description: 'Show on first page (default: true)' },
+          },
+        },
+        metadata: {
+          type: 'object',
+          description: 'PDF metadata',
+          properties: {
+            title: { type: 'string' },
+            author: { type: 'string' },
+            subject: { type: 'string' },
+            keywords: { type: 'array', items: { type: 'string' } },
+            creator: { type: 'string' },
+          },
+        },
+        emulateMediaType: {
+          type: 'string',
+          enum: ['screen', 'print'],
+          description: 'Emulate media type for CSS (default: screen)',
+        },
+        imageOptions: {
+          type: 'object',
+          description: 'Image processing options',
+          properties: {
+            dpi: { type: 'number', description: 'DPI for images: 72 (web), 150 (print), 300 (high-quality)' },
+            format: { type: 'string', enum: ['jpeg', 'png', 'webp'], description: 'Image format' },
+            backgroundColor: { type: 'string', description: 'Background for transparent images (default: #ffffff)' },
+            optimizeForPrint: { type: 'boolean', description: 'Enable print optimizations' },
+            quality: { type: 'number', description: 'Image quality 0-1 (default: 0.92)' },
+          },
+        },
+      },
+    };
+
     return [
       {
         name: 'generate_pdf',
-        description: 'Generate a PDF file from HTML content. Supports A4/Letter/A3/Legal formats, custom margins, watermarks, headers/footers, and more. Returns the file path of the generated PDF.',
+        description: 'Generate a PDF from HTML content or template. Supports all PDF features: watermarks, headers/footers, metadata, print CSS, image optimization. If templateContext is provided, HTML is treated as a template with variable substitution.',
         inputSchema: {
           type: 'object',
           properties: {
             html: {
               type: 'string',
-              description: 'HTML content to convert to PDF. Can include inline styles and CSS.',
+              description: 'HTML content or template. Templates support {{variables}}, {{#each array}}...{{/each}}, {{#if condition}}...{{/if}}',
             },
             outputPath: {
               type: 'string',
-              description: 'Output file path for the PDF (e.g., "/path/to/document.pdf"). Must be absolute path.',
+              description: 'Absolute file path for the PDF (e.g., "/home/user/documents/report.pdf")',
             },
-            options: {
+            templateContext: {
               type: 'object',
-              description: 'PDF generation options',
-              properties: {
-                format: {
-                  type: 'string',
-                  enum: ['a4', 'letter', 'a3', 'legal'],
-                  description: 'Paper format (default: a4)',
-                },
-                orientation: {
-                  type: 'string',
-                  enum: ['portrait', 'landscape'],
-                  description: 'Page orientation (default: portrait)',
-                },
-                margins: {
-                  type: 'array',
-                  items: { type: 'number' },
-                  minItems: 4,
-                  maxItems: 4,
-                  description: 'Margins in mm: [top, right, bottom, left] (default: [10, 10, 10, 10])',
-                },
-                showPageNumbers: {
-                  type: 'boolean',
-                  description: 'Show page numbers (default: false)',
-                },
-                scale: {
-                  type: 'number',
-                  description: 'Scale factor 1-4, higher = better quality (default: 2)',
-                },
-                imageQuality: {
-                  type: 'number',
-                  description: 'Image quality 0-1 (default: 0.85)',
-                },
-                watermark: {
-                  type: 'object',
-                  description: 'Add watermark to pages',
-                  properties: {
-                    text: {
-                      type: 'string',
-                      description: 'Watermark text',
-                    },
-                    opacity: {
-                      type: 'number',
-                      description: 'Opacity 0-1 (default: 0.3)',
-                    },
-                    fontSize: {
-                      type: 'number',
-                      description: 'Font size in px (default: 48)',
-                    },
-                    color: {
-                      type: 'string',
-                      description: 'Text color (default: #cccccc)',
-                    },
-                    position: {
-                      type: 'string',
-                      enum: ['center', 'diagonal', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
-                      description: 'Watermark position (default: diagonal)',
-                    },
-                  },
-                },
-                metadata: {
-                  type: 'object',
-                  description: 'PDF metadata',
-                  properties: {
-                    title: { type: 'string' },
-                    author: { type: 'string' },
-                    subject: { type: 'string' },
-                    keywords: {
-                      type: 'array',
-                      items: { type: 'string' },
-                    },
-                  },
-                },
-              },
+              description: 'Optional: Variables for template substitution. If provided, HTML is treated as template.',
             },
+            options: pdfOptionsSchema,
           },
           required: ['html', 'outputPath'],
+        },
+      },
+      {
+        name: 'generate_batch_pdf',
+        description: 'Generate a single PDF from multiple HTML content items with automatic scaling. Each item can specify target page count - content will be auto-scaled to fit. Ideal for multi-section reports, invoices, or documents.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            items: {
+              type: 'array',
+              description: 'Array of content items to include in PDF',
+              items: {
+                type: 'object',
+                properties: {
+                  html: { type: 'string', description: 'HTML content for this item' },
+                  pageCount: { type: 'number', description: 'Target page count - content will be scaled to fit this number of pages' },
+                },
+                required: ['html', 'pageCount'],
+              },
+            },
+            outputPath: {
+              type: 'string',
+              description: 'Absolute file path for the PDF (e.g., "/home/user/documents/batch-report.pdf")',
+            },
+            options: pdfOptionsSchema,
+          },
+          required: ['items', 'outputPath'],
+        },
+      },
+      {
+        name: 'generate_pdf_from_url',
+        description: 'Generate PDF from a URL. CORS-aware: only works with same-origin or CORS-enabled URLs. For production use cases, prefer server-side solutions (Puppeteer, Playwright). Supports waiting for selectors and injecting custom CSS/JS.',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            url: {
+              type: 'string',
+              description: 'URL to convert to PDF (must be same-origin or CORS-enabled)',
+            },
+            outputPath: {
+              type: 'string',
+              description: 'Absolute file path for the PDF',
+            },
+            urlOptions: {
+              type: 'object',
+              description: 'URL-specific options',
+              properties: {
+                waitForSelector: { type: 'string', description: 'CSS selector to wait for before capture' },
+                timeout: { type: 'number', description: 'Max wait time in ms (default: 10000)' },
+                injectCSS: { type: 'string', description: 'Custom CSS to inject into page' },
+                injectJS: { type: 'string', description: 'Custom JavaScript to execute' },
+              },
+            },
+            options: pdfOptionsSchema,
+          },
+          required: ['url', 'outputPath'],
         },
       },
     ];
@@ -206,7 +297,7 @@ class PDFMCPServer {
    * Handle PDF generation tool
    */
   private async handleGeneratePDF(args: any): Promise<any> {
-    const { html, outputPath, options = {} } = args;
+    const { html, outputPath, templateContext, options = {} } = args;
 
     if (!html || typeof html !== 'string') {
       throw new Error('html parameter is required and must be a string');
@@ -216,17 +307,26 @@ class PDFMCPServer {
       throw new Error('outputPath parameter is required and must be a string');
     }
 
-    // Create a virtual DOM environment for server-side rendering
-    const dom = new JSDOM(html);
-    const document = dom.window.document;
-    const element = document.body;
-
-    // Create PDF generator instance
-    const generator = new PDFGenerator(options);
-
     try {
-      // Generate PDF blob
-      const blob = await generatePDFBlob(element, options);
+      const startTime = Date.now();
+
+      // Create PDF generator instance
+      const generator = new PDFGenerator(options);
+
+      let blob: Blob;
+
+      // If templateContext is provided, use template generation
+      if (templateContext) {
+        blob = await generator.generateBlobFromTemplate(html, templateContext);
+      } else {
+        // Create a virtual DOM environment for server-side rendering
+        const dom = new JSDOM(html);
+        const document = dom.window.document;
+        const element = document.body;
+
+        // Generate PDF blob
+        blob = await generatePDFBlob(element, options);
+      }
 
       // Convert blob to buffer
       const arrayBuffer = await blob.arrayBuffer();
@@ -235,28 +335,147 @@ class PDFMCPServer {
       // Write to file
       writeFileSync(outputPath, buffer);
 
+      const generationTime = Date.now() - startTime;
+
       // Return success response
       const stats = {
-        fileSize: buffer.length,
+        success: true,
+        message: 'PDF generated successfully',
         filePath: outputPath,
+        fileSize: buffer.length,
         format: options.format || 'a4',
         orientation: options.orientation || 'portrait',
+        generationTime: `${generationTime}ms`,
       };
 
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify({
-              success: true,
-              message: 'PDF generated successfully',
-              ...stats,
-            }, null, 2),
+            text: JSON.stringify(stats, null, 2),
           },
         ],
       };
     } catch (error) {
       throw new Error(`PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle batch PDF generation tool
+   */
+  private async handleGenerateBatchPDF(args: any): Promise<any> {
+    const { items, outputPath, options = {} } = args;
+
+    if (!items || !Array.isArray(items)) {
+      throw new Error('items parameter is required and must be an array');
+    }
+
+    if (!outputPath || typeof outputPath !== 'string') {
+      throw new Error('outputPath parameter is required and must be a string');
+    }
+
+    try {
+      const startTime = Date.now();
+
+      // Convert HTML strings to content items with JSDOM
+      const contentItems = items.map((item: any) => {
+        if (!item.html || typeof item.html !== 'string') {
+          throw new Error('Each item must have an html property (string)');
+        }
+        if (!item.pageCount || typeof item.pageCount !== 'number') {
+          throw new Error('Each item must have a pageCount property (number)');
+        }
+
+        const dom = new JSDOM(item.html);
+        return {
+          content: dom.window.document.body,
+          pageCount: item.pageCount,
+        };
+      });
+
+      // Generate batch PDF
+      const result = await generateBatchPDF(contentItems, outputPath, options);
+
+      const generationTime = Date.now() - startTime;
+
+      // Return success response
+      const stats = {
+        success: true,
+        message: 'Batch PDF generated successfully',
+        filePath: outputPath,
+        fileSize: result.fileSize,
+        totalPages: result.pageCount,
+        itemCount: result.items.length,
+        items: result.items.map((item: any) => ({
+          index: item.index,
+          pageCount: item.pageCount,
+          startPage: item.startPage,
+          endPage: item.endPage,
+        })),
+        generationTime: `${generationTime}ms`,
+      };
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(stats, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`Batch PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Handle URL to PDF generation tool
+   */
+  private async handleGeneratePDFFromURL(args: any): Promise<any> {
+    const { url, outputPath, urlOptions = {}, options = {} } = args;
+
+    if (!url || typeof url !== 'string') {
+      throw new Error('url parameter is required and must be a string');
+    }
+
+    if (!outputPath || typeof outputPath !== 'string') {
+      throw new Error('outputPath parameter is required and must be a string');
+    }
+
+    try {
+      const startTime = Date.now();
+
+      // Create PDF generator instance
+      const generator = new PDFGenerator(options);
+
+      // Generate PDF from URL (this will use generatePDF which returns result object)
+      // Since we need to get the result with pageCount, we'll call the method directly
+      const result = await generator.generatePDFFromURL(url, outputPath, urlOptions);
+
+      const generationTime = Date.now() - startTime;
+
+      // Return success response
+      const stats = {
+        success: true,
+        message: 'PDF from URL generated successfully',
+        filePath: outputPath,
+        fileSize: result.fileSize,
+        pageCount: result.pageCount,
+        sourceURL: url,
+        generationTime: `${generationTime}ms`,
+      };
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(stats, null, 2),
+          },
+        ],
+      };
+    } catch (error) {
+      throw new Error(`URL to PDF generation failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 

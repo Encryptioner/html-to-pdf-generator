@@ -61,7 +61,12 @@ Close and reopen Claude Desktop completely for the changes to take effect.
 
 ## 💬 Example Conversations
 
-### Basic PDF Generation
+The MCP server provides **3 tools** for different PDF generation scenarios:
+- `generate_pdf` - Single HTML to PDF (with optional template support)
+- `generate_batch_pdf` - Multiple content items with auto-scaling
+- `generate_pdf_from_url` - URL to PDF conversion
+
+### 1. Basic PDF Generation
 
 ```
 You: Generate a PDF with the title "My Report" and some content, save it to ~/Documents/report.pdf
@@ -76,7 +81,7 @@ Claude: I'll create that PDF for you.
 - Format: A4 Portrait
 ```
 
-### With Watermark
+### 2. PDF with Watermark
 
 ```
 You: Create a PDF with "Q4 Financial Report" as the title and add a "DRAFT" watermark in red. Save to ~/Documents/draft-report.pdf
@@ -91,7 +96,60 @@ Claude: I'll generate that PDF with a draft watermark.
 - Format: A4 Portrait
 ```
 
-### Custom Format & Margins
+### 3. Template with Variables
+
+```
+You: Create an invoice PDF for Invoice #1234 with these items:
+- Item 1: $10.00
+- Item 2: $20.00
+Save to ~/Documents/invoice.pdf
+
+Claude: I'll create that invoice using a template.
+
+[Claude uses the generate_pdf tool with templateContext]
+
+✅ PDF generated successfully!
+- File: /Users/you/Documents/invoice.pdf
+- Template variables processed
+- Items: 2
+```
+
+### 4. Batch PDF (Multi-Section Report)
+
+```
+You: Create a report with 3 sections:
+1. Executive Summary (should be 1 page)
+2. Financial Details (should be 2 pages)
+3. Appendix (should be 1 page)
+Save to ~/Documents/annual-report.pdf
+
+Claude: I'll create a multi-section PDF with auto-scaling.
+
+[Claude uses the generate_batch_pdf tool]
+
+✅ Batch PDF generated successfully!
+- File: /Users/you/Documents/annual-report.pdf
+- Total pages: 4
+- Sections: 3
+- Each section scaled to fit target pages
+```
+
+### 5. URL to PDF
+
+```
+You: Convert https://example.com to a PDF and save to ~/Documents/webpage.pdf
+
+Claude: I'll convert that webpage to PDF.
+
+[Claude uses the generate_pdf_from_url tool]
+
+✅ PDF from URL generated successfully!
+- File: /Users/you/Documents/webpage.pdf
+- Source: https://example.com
+- Pages: 3
+```
+
+### 6. Custom Format & Margins
 
 ```
 You: Generate a landscape Letter-sized PDF with 20mm margins on all sides. Title should be "Wide Report". Save to ~/Documents/wide.pdf
@@ -104,25 +162,6 @@ Claude: I'll create that landscape Letter PDF with custom margins.
 - File: /Users/you/Documents/wide.pdf
 - Format: Letter Landscape
 - Margins: 20mm all sides
-```
-
-### Complex HTML Content
-
-```
-You: Create a PDF with a table of products, prices, and descriptions. Include:
-- Product A: $19.99 - High quality item
-- Product B: $29.99 - Premium item
-- Product C: $39.99 - Deluxe item
-Add a header "Product Catalog" and save to ~/Documents/catalog.pdf
-
-Claude: I'll create that product catalog PDF with a table.
-
-[Claude generates HTML with a styled table and uses generate_pdf]
-
-✅ PDF generated successfully!
-- File: /Users/you/Documents/catalog.pdf
-- Pages: 1
-- Contains: Formatted table with 3 products
 ```
 
 ## 🔧 Advanced Features

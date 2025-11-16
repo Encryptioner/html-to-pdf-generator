@@ -44,10 +44,13 @@
 
 ### MCP Server Support 🆕
 ✅ Server-side PDF generation via Model Context Protocol
-✅ Claude Desktop integration
+✅ Claude Desktop integration with 3 token-efficient tools
 ✅ File system access for saving PDFs
 ✅ All features available server-side
 ✅ Zero browser dependencies
+✅ Batch PDF generation with auto-scaling
+✅ Template support with variable substitution
+✅ URL to PDF conversion (CORS-aware)
 
 ## Quick Start
 
@@ -133,28 +136,42 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 
 ### With MCP Server (Claude Desktop) 🆕
 
-The package includes an MCP server for server-side PDF generation via Claude Desktop:
+The package includes an MCP server for server-side PDF generation via Claude Desktop with **3 token-efficient tools**:
+
+1. **`generate_pdf`** - Single HTML to PDF (with optional template support)
+2. **`generate_batch_pdf`** - Multiple content items with auto-scaling
+3. **`generate_pdf_from_url`** - URL to PDF conversion
 
 ```bash
 # Configure Claude Desktop (see MCP_QUICKSTART.md for details)
 # Then use natural language with Claude:
 ```
 
-**Example conversation:**
+**Example conversations:**
 ```
 You: Generate a PDF with title "My Report" and save to ~/Documents/report.pdf
 
-Claude: I'll create that PDF for you.
-[Uses generate_pdf MCP tool]
-
+Claude: [Uses generate_pdf tool]
 ✅ PDF generated successfully!
-- File: /Users/you/Documents/report.pdf
-- Size: 15.2 KB
-- Format: A4 Portrait
+```
+
+```
+You: Create a multi-section report with 3 sections: Executive Summary (1 page),
+     Details (2 pages), and Appendix (1 page). Save to ~/Documents/report.pdf
+
+Claude: [Uses generate_batch_pdf tool]
+✅ Batch PDF with 3 sections generated successfully! Total: 4 pages
+```
+
+```
+You: Convert https://example.com to PDF and save to ~/Documents/webpage.pdf
+
+Claude: [Uses generate_pdf_from_url tool]
+✅ URL converted to PDF successfully!
 ```
 
 **📖 [MCP Quick Start Guide](./MCP_QUICKSTART.md)** - Get started in 5 minutes
-**📘 [MCP Server Docs](./mcp/README.md)** - Complete MCP documentation
+**📘 [MCP Server Docs](./mcp/README.md)** - Complete MCP documentation with all 3 tools
 
 ## Documentation
 

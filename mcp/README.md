@@ -82,14 +82,18 @@ The server communicates via stdio and follows the MCP protocol.
 
 ## 🛠️ Available Tools
 
-### `generate_pdf`
+The MCP server provides three token-efficient tools for PDF generation:
 
-Generate a PDF file from HTML content.
+### 1. `generate_pdf`
+
+Generate a PDF from HTML content or template. Supports all PDF features including watermarks, headers/footers, metadata, and image optimization.
 
 **Parameters:**
 
-- `html` (string, required): HTML content to convert
+- `html` (string, required): HTML content or template
+  - Templates support `{{variables}}`, `{{#each array}}...{{/each}}`, `{{#if condition}}...{{/if}}`
 - `outputPath` (string, required): Absolute path for the output PDF
+- `templateContext` (object, optional): Variables for template substitution
 - `options` (object, optional): PDF generation options
   - `format`: Paper format ('a4' | 'letter' | 'a3' | 'legal')
   - `orientation`: Page orientation ('portrait' | 'landscape')
@@ -97,10 +101,13 @@ Generate a PDF file from HTML content.
   - `showPageNumbers`: Show page numbers (boolean)
   - `scale`: Scale factor 1-4 for quality
   - `imageQuality`: Image quality 0-1
-  - `watermark`: Watermark configuration
-  - `metadata`: PDF metadata (title, author, subject, keywords)
+  - `watermark`: Watermark configuration (text or image)
+  - `headerTemplate` / `footerTemplate`: Dynamic headers/footers
+  - `metadata`: PDF metadata (title, author, subject, keywords, creator)
+  - `emulateMediaType`: 'screen' or 'print' for CSS
+  - `imageOptions`: Image processing (dpi, format, backgroundColor, optimizeForPrint)
 
-**Example:**
+**Example (Basic HTML):**
 
 ```json
 {
@@ -119,16 +126,140 @@ Generate a PDF file from HTML content.
 }
 ```
 
+**Example (Template with Variables):**
+
+```json
+{
+  "html": "<h1>{{title}}</h1>{{#each items}}<p>{{name}}: ${{price}}</p>{{/each}}",
+  "outputPath": "/tmp/invoice.pdf",
+  "templateContext": {
+    "title": "Invoice #1234",
+    "items": [
+      {"name": "Item 1", "price": "10.00"},
+      {"name": "Item 2", "price": "20.00"}
+    ]
+  },
+  "options": {
+    "format": "a4",
+    "metadata": {"title": "Invoice #1234"}
+  }
+}
+```
+
 **Response:**
 
 ```json
 {
   "success": true,
   "message": "PDF generated successfully",
-  "fileSize": 15432,
   "filePath": "/tmp/document.pdf",
+  "fileSize": 15432,
   "format": "a4",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "generationTime": "1823ms"
+}
+```
+
+### 2. `generate_batch_pdf`
+
+Generate a single PDF from multiple HTML content items with automatic scaling. Each item can specify a target page count, and content will be auto-scaled to fit. Ideal for multi-section reports, invoices, or documents.
+
+**Parameters:**
+
+- `items` (array, required): Array of content items
+  - Each item has:
+    - `html` (string, required): HTML content for this item
+    - `pageCount` (number, required): Target page count (content will be scaled to fit)
+- `outputPath` (string, required): Absolute path for the output PDF
+- `options` (object, optional): Same PDF options as `generate_pdf`
+
+**Example:**
+
+```json
+{
+  "items": [
+    {
+      "html": "<h1>Section 1: Executive Summary</h1><p>Long content...</p>",
+      "pageCount": 2
+    },
+    {
+      "html": "<h1>Section 2: Details</h1><p>More content...</p>",
+      "pageCount": 3
+    }
+  ],
+  "outputPath": "/tmp/report.pdf",
+  "options": {
+    "format": "a4",
+    "showPageNumbers": true,
+    "metadata": {"title": "Multi-Section Report"}
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Batch PDF generated successfully",
+  "filePath": "/tmp/report.pdf",
+  "fileSize": 245678,
+  "totalPages": 5,
+  "itemCount": 2,
+  "items": [
+    {"index": 0, "pageCount": 2, "startPage": 1, "endPage": 2},
+    {"index": 1, "pageCount": 3, "startPage": 3, "endPage": 5}
+  ],
+  "generationTime": "2341ms"
+}
+```
+
+### 3. `generate_pdf_from_url`
+
+Generate PDF from a URL. CORS-aware - only works with same-origin or CORS-enabled URLs. Supports waiting for selectors and injecting custom CSS/JS.
+
+**⚠️ Note:** For production use cases, prefer server-side solutions (Puppeteer, Playwright, wkhtmltopdf) as this tool has CORS limitations.
+
+**Parameters:**
+
+- `url` (string, required): URL to convert to PDF (must be same-origin or CORS-enabled)
+- `outputPath` (string, required): Absolute path for the output PDF
+- `urlOptions` (object, optional): URL-specific options
+  - `waitForSelector` (string): CSS selector to wait for before capture
+  - `timeout` (number): Max wait time in ms (default: 10000)
+  - `injectCSS` (string): Custom CSS to inject into page
+  - `injectJS` (string): Custom JavaScript to execute
+- `options` (object, optional): Same PDF options as `generate_pdf`
+
+**Example:**
+
+```json
+{
+  "url": "https://example.com/page",
+  "outputPath": "/tmp/webpage.pdf",
+  "urlOptions": {
+    "waitForSelector": ".content-loaded",
+    "timeout": 15000,
+    "injectCSS": ".no-print { display: none; }"
+  },
+  "options": {
+    "format": "a4",
+    "emulateMediaType": "print"
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "PDF from URL generated successfully",
+  "filePath": "/tmp/webpage.pdf",
+  "fileSize": 123456,
+  "pageCount": 3,
+  "sourceURL": "https://example.com/page",
+  "generationTime": "3245ms"
 }
 ```
 
