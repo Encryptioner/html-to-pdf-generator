@@ -14,33 +14,53 @@ import {
   ListToolsRequestSchema,
   Tool,
 } from '@modelcontextprotocol/sdk/types.js';
-import { JSDOM } from 'jsdom';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, statSync } from 'fs';
 
 // Import the core PDF generator from parent package
-// In production, this would use the installed package
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const parentDir = join(__dirname, '..', '..');
 
-// For now, we'll use dynamic import to load the built library
-// This will be properly resolved when the package is installed
+// Try to use Puppeteer-based server generator first (best quality)
+// Fall back to browser-based generator if Puppeteer not available
+let ServerPDFGenerator: any;
+let usePuppeteer = false;
+
+try {
+  // Try to load the Node.js adapter with Puppeteer support
+  const nodeModule = await import(join(parentDir, 'dist', 'node.js'));
+  ServerPDFGenerator = nodeModule.ServerPDFGenerator;
+  usePuppeteer = true;
+  console.error('[MCP] Using Puppeteer for server-side rendering (recommended)');
+} catch (error) {
+  console.error('[MCP] Puppeteer not available, using fallback mode');
+  console.error('[MCP] For best quality, install Puppeteer: npm install puppeteer');
+  usePuppeteer = false;
+}
+
+// Fallback: Load JSDOM-based generator (lower quality but works without Puppeteer)
 let PDFGenerator: any;
 let generatePDFBlob: any;
 let generateBatchPDF: any;
+let JSDOM: any;
 
-try {
-  // Try to import from the parent dist folder
-  const coreModule = await import(join(parentDir, 'dist', 'index.js'));
-  PDFGenerator = coreModule.PDFGenerator;
-  generatePDFBlob = coreModule.generatePDFBlob;
-  generateBatchPDF = coreModule.generateBatchPDF;
-} catch (error) {
-  console.error('Failed to load PDF generator core library:', error);
-  console.error('Please ensure the main package is built: pnpm run build');
-  process.exit(1);
+if (!usePuppeteer) {
+  try {
+    const coreModule = await import(join(parentDir, 'dist', 'index.js'));
+    PDFGenerator = coreModule.PDFGenerator;
+    generatePDFBlob = coreModule.generatePDFBlob;
+    generateBatchPDF = coreModule.generateBatchPDF;
+
+    // Import JSDOM for fallback
+    const jsdomModule = await import('jsdom');
+    JSDOM = jsdomModule.JSDOM;
+  } catch (error) {
+    console.error('Failed to load PDF generator library:', error);
+    console.error('Please ensure the package is built: pnpm run build');
+    process.exit(1);
+  }
 }
 
 /**
@@ -309,50 +329,76 @@ class PDFMCPServer {
 
     try {
       const startTime = Date.now();
+      let result: any;
 
-      // Create PDF generator instance
+      // Use Puppeteer if available (best quality)
+      if (usePuppeteer) {
+        const generator = new ServerPDFGenerator(options);
+
+        try {
+          if (templateContext) {
+            result = await generator.generatePDFFromTemplate(html, templateContext, outputPath);
+          } else {
+            result = await generator.generatePDF(html, outputPath);
+          }
+        } finally {
+          await generator.close();
+        }
+
+        const generationTime = Date.now() - startTime;
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                success: true,
+                message: 'PDF generated successfully (Puppeteer)',
+                filePath: outputPath,
+                fileSize: result.fileSize,
+                pageCount: result.pageCount,
+                format: options.format || 'a4',
+                orientation: options.orientation || 'portrait',
+                generationTime: `${generationTime}ms`,
+                renderMode: 'puppeteer',
+              }, null, 2),
+            },
+          ],
+        };
+      }
+
+      // Fallback: Use JSDOM (works without Puppeteer but limited quality)
       const generator = new PDFGenerator(options);
-
       let blob: Blob;
 
-      // If templateContext is provided, use template generation
       if (templateContext) {
         blob = await generator.generateBlobFromTemplate(html, templateContext);
       } else {
-        // Create a virtual DOM environment for server-side rendering
         const dom = new JSDOM(html);
-        const document = dom.window.document;
-        const element = document.body;
-
-        // Generate PDF blob
+        const element = dom.window.document.body;
         blob = await generatePDFBlob(element, options);
       }
 
-      // Convert blob to buffer
       const arrayBuffer = await blob.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
-
-      // Write to file
       writeFileSync(outputPath, buffer);
 
       const generationTime = Date.now() - startTime;
-
-      // Return success response
-      const stats = {
-        success: true,
-        message: 'PDF generated successfully',
-        filePath: outputPath,
-        fileSize: buffer.length,
-        format: options.format || 'a4',
-        orientation: options.orientation || 'portrait',
-        generationTime: `${generationTime}ms`,
-      };
 
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(stats, null, 2),
+            text: JSON.stringify({
+              success: true,
+              message: 'PDF generated successfully (fallback mode - install Puppeteer for best quality)',
+              filePath: outputPath,
+              fileSize: buffer.length,
+              format: options.format || 'a4',
+              orientation: options.orientation || 'portrait',
+              generationTime: `${generationTime}ms`,
+              renderMode: 'jsdom-fallback',
+            }, null, 2),
           },
         ],
       };

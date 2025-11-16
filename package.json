@@ -46,6 +46,9 @@
   "types": "./dist/index.d.ts",
   "typesVersions": {
     "*": {
+      "node": [
+        "./dist/node.d.ts"
+      ],
       "react": [
         "./dist/react.d.ts"
       ],
@@ -62,6 +65,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
     },
     "./react": {
       "types": "./dist/react.d.ts",
@@ -110,6 +118,9 @@
     "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "puppeteer": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },

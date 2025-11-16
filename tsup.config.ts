@@ -3,6 +3,7 @@
  *
  * This configuration creates separate bundles for:
  * - Core library (framework-agnostic)
+ * - Node.js adapter (server-side with Puppeteer)
  * - React adapter
  * - Vue adapter
  * - Svelte adapter
@@ -25,6 +26,22 @@ export default defineConfig([
     sourcemap: true,
     minify: false,
     outDir: 'dist',
+  },
+
+  // Node.js adapter (server-side with Puppeteer)
+  {
+    entry: {
+      node: 'src/adapters/node/index.ts',
+    },
+    format: ['esm', 'cjs'],
+    dts: true,
+    external: ['puppeteer', 'jspdf', 'html2canvas'],
+    treeshake: true,
+    splitting: false,
+    sourcemap: true,
+    minify: false,
+    outDir: 'dist',
+    platform: 'node',
   },
 
   // React adapter
