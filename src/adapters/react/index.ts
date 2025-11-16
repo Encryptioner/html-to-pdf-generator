@@ -16,6 +16,10 @@ export type {
   UseBatchPDFGeneratorReturn,
 } from './usePDFGenerator';
 
+// Preview component and hook
+export { PDFPreview, usePDFPreview } from './PDFPreview';
+export type { PDFPreviewProps } from './PDFPreview';
+
 // Re-export core functions for direct usage
 export {
   PDFGenerator,
@@ -46,6 +50,11 @@ export type {
   TOCEntry,
   BookmarkOptions,
   BookmarkEntry,
+  PDFSecurityOptions,
+  PDFSecurityPermissions,
+  AsyncProcessingOptions,
+  PreviewOptions,
+  URLToPDFOptions,
 } from '../../types';
 
 // Re-export utility functions

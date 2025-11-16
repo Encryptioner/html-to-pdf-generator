@@ -16,7 +16,10 @@ import type {
   BookmarkOptions,
   TemplateContext,
   TOCEntry,
-  BookmarkEntry
+  BookmarkEntry,
+  PDFSecurityOptions,
+  AsyncProcessingOptions,
+  PreviewOptions,
 } from './types';
 
 /** Standard paper formats in mm */
@@ -60,6 +63,9 @@ export const DEFAULT_OPTIONS: Required<PDFGeneratorOptions> = {
   fontOptions: undefined as unknown as FontOptions,
   tocOptions: undefined as unknown as TOCOptions,
   bookmarkOptions: undefined as unknown as BookmarkOptions,
+  securityOptions: undefined as unknown as PDFSecurityOptions,
+  asyncOptions: undefined as unknown as AsyncProcessingOptions,
+  previewOptions: undefined as unknown as PreviewOptions,
 };
 
 /**

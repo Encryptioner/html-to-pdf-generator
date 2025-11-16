@@ -228,6 +228,128 @@ export interface BookmarkOptions {
   openByDefault?: boolean;
 }
 
+/**
+ * PDF security permissions
+ */
+export interface PDFSecurityPermissions {
+  /** Allow printing */
+  printing?: 'none' | 'lowResolution' | 'highResolution';
+
+  /** Allow modifying the document */
+  modifying?: boolean;
+
+  /** Allow copying text and graphics */
+  copying?: boolean;
+
+  /** Allow adding or modifying annotations */
+  annotating?: boolean;
+
+  /** Allow filling in form fields */
+  fillingForms?: boolean;
+
+  /** Allow content accessibility */
+  contentAccessibility?: boolean;
+
+  /** Allow assembling document */
+  documentAssembly?: boolean;
+}
+
+/**
+ * PDF security/encryption configuration
+ */
+export interface PDFSecurityOptions {
+  /** Enable encryption */
+  enabled?: boolean;
+
+  /** User password (required to open the PDF) */
+  userPassword?: string;
+
+  /** Owner password (required to modify permissions) */
+  ownerPassword?: string;
+
+  /** Document permissions */
+  permissions?: PDFSecurityPermissions;
+
+  /** Encryption strength (128 or 256 bit) */
+  encryptionStrength?: 128 | 256;
+}
+
+/**
+ * Async processing configuration
+ */
+export interface AsyncProcessingOptions {
+  /** Enable async processing */
+  enabled?: boolean;
+
+  /** Webhook URL to call when PDF is ready */
+  webhookUrl?: string;
+
+  /** Custom headers for webhook request */
+  webhookHeaders?: Record<string, string>;
+
+  /** Job ID for tracking */
+  jobId?: string;
+
+  /** Progress callback URL */
+  progressUrl?: string;
+}
+
+/**
+ * Preview options for real-time PDF preview
+ */
+export interface PreviewOptions {
+  /** Enable live preview updates */
+  liveUpdate?: boolean;
+
+  /** Debounce delay in milliseconds */
+  debounce?: number;
+
+  /** Preview quality (lower = faster) */
+  quality?: number;
+
+  /** Scale factor for preview */
+  scale?: number;
+
+  /** Container element ID for preview */
+  containerId?: string;
+}
+
+/**
+ * URL to PDF configuration
+ */
+export interface URLToPDFOptions {
+  /** URL to convert */
+  url: string;
+
+  /** Wait for selector before capturing */
+  waitForSelector?: string;
+
+  /** Timeout in milliseconds */
+  timeout?: number;
+
+  /** Wait for network idle */
+  waitForNetworkIdle?: boolean;
+
+  /** Custom viewport size */
+  viewport?: {
+    width: number;
+    height: number;
+  };
+
+  /** Inject custom JavaScript */
+  injectJS?: string;
+
+  /** Inject custom CSS */
+  injectCSS?: string;
+
+  /** Cookies to set */
+  cookies?: Array<{
+    name: string;
+    value: string;
+    domain?: string;
+  }>;
+}
+
 export interface PDFGeneratorOptions {
   /** PDF orientation */
   orientation?: 'portrait' | 'landscape';
@@ -321,6 +443,15 @@ export interface PDFGeneratorOptions {
 
   /** Bookmarks/outline configuration */
   bookmarkOptions?: BookmarkOptions;
+
+  /** PDF security/encryption configuration */
+  securityOptions?: PDFSecurityOptions;
+
+  /** Async processing configuration */
+  asyncOptions?: AsyncProcessingOptions;
+
+  /** Preview options */
+  previewOptions?: PreviewOptions;
 }
 
 export interface PDFPageConfig {

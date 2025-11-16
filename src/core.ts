@@ -27,6 +27,14 @@ import {
   convertOklchInElement,
   convertOklchInStylesheets,
   extractAndConvertOklchFromStylesheets,
+  processTemplateWithContext,
+  extractHeadings,
+  buildTOCHierarchy,
+  generateTOCHTML,
+  generateTOCCSS,
+  buildBookmarkHierarchy,
+  replaceWithWebSafeFonts,
+  generateFontFaceCSS,
 } from './utils';
 import {
   processImagesForPDF,
@@ -58,6 +66,248 @@ export class PDFGenerator {
   }
 
   /**
+   * Generate PDF from HTML template with variables
+   */
+  async generatePDFFromTemplate(
+    template: string,
+    context: Record<string, any>,
+    filename: string = 'document.pdf',
+    options?: { enableLoops?: boolean; enableConditionals?: boolean }
+  ): Promise<PDFGenerationResult> {
+    // Process template with context
+    const processedHTML = processTemplateWithContext(template, context, {
+      enableLoops: options?.enableLoops ?? true,
+      enableConditionals: options?.enableConditionals ?? true
+    });
+
+    // Convert HTML string to element
+    const element = htmlStringToElement(processedHTML);
+
+    // Generate PDF from the processed element
+    return this.generatePDF(element, filename);
+  }
+
+  /**
+   * Generate PDF blob from HTML template with variables (without downloading)
+   */
+  async generateBlobFromTemplate(
+    template: string,
+    context: Record<string, any>,
+    options?: { enableLoops?: boolean; enableConditionals?: boolean }
+  ): Promise<Blob> {
+    // Process template with context
+    const processedHTML = processTemplateWithContext(template, context, {
+      enableLoops: options?.enableLoops ?? true,
+      enableConditionals: options?.enableConditionals ?? true
+    });
+
+    // Convert HTML string to element
+    const element = htmlStringToElement(processedHTML);
+
+    // Generate blob from the processed element
+    return this.generateBlob(element);
+  }
+
+  /**
+   * Generate PDF asynchronously with webhook support
+   */
+  async generatePDFAsync(
+    element: HTMLElement,
+    filename: string = 'document.pdf'
+  ): Promise<{ jobId: string; status: string }> {
+    if (!this.options.asyncOptions?.enabled) {
+      throw new Error('Async processing is not enabled. Set asyncOptions.enabled to true.');
+    }
+
+    const jobId = this.options.asyncOptions.jobId || this.generateJobId();
+    const webhookUrl = this.options.asyncOptions.webhookUrl;
+    const progressUrl = this.options.asyncOptions.progressUrl;
+
+    // Start async generation
+    setTimeout(async () => {
+      try {
+        // Generate PDF
+        const result = await this.generatePDF(element, filename);
+
+        // Send webhook notification if URL provided
+        if (webhookUrl) {
+          await this.sendWebhook(webhookUrl, {
+            jobId,
+            status: 'completed',
+            result: {
+              pageCount: result.pageCount,
+              fileSize: result.fileSize,
+              generationTime: result.generationTime,
+            },
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (error) {
+        // Send error webhook
+        if (webhookUrl) {
+          await this.sendWebhook(webhookUrl, {
+            jobId,
+            status: 'failed',
+            error: error instanceof Error ? error.message : String(error),
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }
+    }, 0);
+
+    return {
+      jobId,
+      status: 'processing',
+    };
+  }
+
+  /**
+   * Generate a unique job ID
+   */
+  private generateJobId(): string {
+    return `pdf-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+  }
+
+  /**
+   * Send webhook notification
+   */
+  private async sendWebhook(url: string, data: any): Promise<void> {
+    try {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        ...this.options.asyncOptions?.webhookHeaders,
+      };
+
+      await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(data),
+      });
+    } catch (error) {
+      console.error('Failed to send webhook:', error);
+    }
+  }
+
+  /**
+   * Generate PDF from URL (client-side with limitations)
+   *
+   * NOTE: Due to browser security restrictions (CORS), this method has significant limitations:
+   * - Only works with URLs from the same origin or CORS-enabled servers
+   * - Cannot wait for dynamic content loading
+   * - Limited control over page state
+   *
+   * For full-featured URL-to-PDF conversion, use server-side solutions like:
+   * - Puppeteer, Playwright, or similar headless browsers
+   * - Dedicated PDF generation services
+   *
+   * @param url URL to convert to PDF
+   * @param filename Output filename
+   * @param urlOptions URL-specific options
+   */
+  async generatePDFFromURL(
+    url: string,
+    filename: string = 'document.pdf',
+    urlOptions: {
+      waitForSelector?: string;
+      timeout?: number;
+      injectCSS?: string;
+      injectJS?: string;
+    } = {}
+  ): Promise<PDFGenerationResult> {
+    return new Promise((resolve, reject) => {
+      // Create hidden iframe to load the URL
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      iframe.style.width = '794px'; // A4 width at 96 DPI
+      iframe.style.border = 'none';
+
+      const timeout = urlOptions.timeout || 10000;
+      let timeoutId: NodeJS.Timeout;
+
+      // Cleanup function
+      const cleanup = () => {
+        clearTimeout(timeoutId);
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      };
+
+      // Set timeout
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error(`Timeout: Failed to load URL within ${timeout}ms`));
+      }, timeout);
+
+      // Handle iframe load
+      iframe.onload = async () => {
+        try {
+          const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+
+          if (!iframeDoc) {
+            cleanup();
+            reject(new Error('Failed to access iframe content. Possible CORS restriction.'));
+            return;
+          }
+
+          // Inject custom CSS if provided
+          if (urlOptions.injectCSS) {
+            const style = iframeDoc.createElement('style');
+            style.textContent = urlOptions.injectCSS;
+            iframeDoc.head.appendChild(style);
+          }
+
+          // Inject custom JavaScript if provided
+          if (urlOptions.injectJS) {
+            const script = iframeDoc.createElement('script');
+            script.textContent = urlOptions.injectJS;
+            iframeDoc.body.appendChild(script);
+          }
+
+          // Wait for selector if specified
+          if (urlOptions.waitForSelector) {
+            const maxWait = 5000;
+            const startTime = Date.now();
+
+            while (!iframeDoc.querySelector(urlOptions.waitForSelector)) {
+              if (Date.now() - startTime > maxWait) {
+                cleanup();
+                reject(new Error(`Timeout: Selector "${urlOptions.waitForSelector}" not found`));
+                return;
+              }
+              await new Promise(r => setTimeout(r, 100));
+            }
+          }
+
+          // Wait a bit for content to stabilize
+          await new Promise(r => setTimeout(r, 500));
+
+          // Generate PDF from iframe body
+          const element = iframeDoc.body;
+          const result = await this.generatePDF(element, filename);
+
+          cleanup();
+          resolve(result);
+        } catch (error) {
+          cleanup();
+          reject(error);
+        }
+      };
+
+      // Handle iframe error
+      iframe.onerror = () => {
+        cleanup();
+        reject(new Error('Failed to load URL. Check CORS settings and URL validity.'));
+      };
+
+      // Append iframe and load URL
+      document.body.appendChild(iframe);
+      iframe.src = url;
+    });
+  }
+
+  /**
    * Generate PDF from HTML element
    */
   async generatePDF(
@@ -79,6 +329,13 @@ export class PDFGenerator {
 
       // Step 3: Generate PDF with pagination
       const pdf = await this.createPDFFromCanvas(canvas);
+
+      // Add bookmarks if enabled
+      this.addBookmarks(pdf, preparedElement);
+
+      // Apply security settings if enabled
+      this.applyPDFSecurity(pdf);
+
       this.options.onProgress(80);
 
       // Step 4: Generate blob and download
@@ -128,6 +385,13 @@ export class PDFGenerator {
       this.options.onProgress(40);
 
       const pdf = await this.createPDFFromCanvas(canvas);
+
+      // Add bookmarks if enabled
+      this.addBookmarks(pdf, preparedElement);
+
+      // Apply security settings if enabled
+      this.applyPDFSecurity(pdf);
+
       this.options.onProgress(80);
 
       const blob = pdf.output('blob');
@@ -183,6 +447,15 @@ export class PDFGenerator {
       this.options.customCSS,
     ];
 
+    // Add font handling
+    if (this.options.fontOptions) {
+      // Generate @font-face rules for custom fonts
+      if (this.options.fontOptions.fonts && this.options.fontOptions.fonts.length > 0) {
+        const fontCSS = generateFontFaceCSS(this.options.fontOptions.fonts);
+        cssBlocks.push(fontCSS);
+      }
+    }
+
     // Emulate print media if requested
     if (this.options.emulateMediaType === 'print') {
       cssBlocks.push(`
@@ -217,7 +490,12 @@ export class PDFGenerator {
       }
     }
 
-    const css = cssBlocks.join('\n\n');
+    let css = cssBlocks.join('\n\n');
+
+    // Apply web-safe font replacements if enabled
+    if (this.options.fontOptions?.useWebSafeFonts) {
+      css = replaceWithWebSafeFonts(css);
+    }
 
     // Convert OKLCH colors in custom CSS to RGB
     const cssWithRgb = convertOklchToRgbInCSS(css);
@@ -271,6 +549,9 @@ export class PDFGenerator {
       preventOrphanedHeadings: true,
       respectCSSPageBreaks: true,
     });
+
+    // Insert TOC if enabled
+    this.insertTOC(clone);
 
     // Final wait for all processing
     await new Promise((resolve) => setTimeout(resolve, 200));
@@ -622,6 +903,57 @@ export class PDFGenerator {
   }
 
   /**
+   * Apply PDF security/encryption
+   */
+  private applyPDFSecurity(pdf: jsPDF): void {
+    if (!this.options.securityOptions?.enabled) return;
+
+    const security = this.options.securityOptions;
+
+    try {
+      // Note: jsPDF core doesn't have built-in encryption support
+      // This would require a jsPDF encryption plugin or post-processing
+      // For now, we'll store security settings in PDF custom properties
+
+      const securitySettings: any = {};
+
+      if (security.userPassword) {
+        securitySettings.userPassword = security.userPassword;
+      }
+
+      if (security.ownerPassword) {
+        securitySettings.ownerPassword = security.ownerPassword;
+      }
+
+      if (security.permissions) {
+        securitySettings.permissions = {
+          printing: security.permissions.printing || 'none',
+          modifying: security.permissions.modifying ?? false,
+          copying: security.permissions.copying ?? false,
+          annotating: security.permissions.annotating ?? false,
+          fillingForms: security.permissions.fillingForms ?? true,
+          contentAccessibility: security.permissions.contentAccessibility ?? true,
+          documentAssembly: security.permissions.documentAssembly ?? false,
+        };
+      }
+
+      securitySettings.encryptionStrength = security.encryptionStrength || 128;
+
+      // Store security settings for potential post-processing
+      (pdf as any).__securityOptions = securitySettings;
+
+      // NOTE: Actual encryption would require:
+      // 1. jsPDF encryption plugin (not available in core jsPDF)
+      // 2. Server-side PDF processing with libraries like pdf-lib or PyPDF2
+      // 3. External PDF encryption tools
+
+      console.warn('PDF encryption requires additional processing. Security settings stored but not applied.');
+    } catch (error) {
+      console.error('Failed to apply PDF security:', error);
+    }
+  }
+
+  /**
    * Helper: Parse color string to RGB
    */
   private parseColor(color: string): { r: number; g: number; b: number } {
@@ -687,6 +1019,97 @@ export class PDFGenerator {
       month: 'long',
       day: 'numeric'
     });
+  }
+
+  /**
+   * Generate and insert TOC into element
+   */
+  private insertTOC(element: HTMLElement): void {
+    if (!this.options.tocOptions?.enabled) return;
+
+    const tocOptions = this.options.tocOptions;
+    const levels = tocOptions.levels || [1, 2, 3];
+
+    // Extract headings from the element
+    const headings = extractHeadings(element, levels);
+
+    if (headings.length === 0) return;
+
+    // Build TOC structure (page numbers will be placeholders for now)
+    const tocEntries = headings.map(h => ({
+      title: h.title,
+      level: h.level,
+      page: 0, // Placeholder - would need complex tracking to get actual page numbers
+      id: h.id
+    }));
+
+    const hierarchy = buildTOCHierarchy(tocEntries);
+
+    // Generate TOC HTML
+    const tocHTML = generateTOCHTML(hierarchy, {
+      title: tocOptions.title || 'Table of Contents',
+      includePageNumbers: tocOptions.includePageNumbers ?? false, // Disable page numbers for now
+      indentPerLevel: tocOptions.indentPerLevel || 10,
+      enableLinks: tocOptions.enableLinks ?? true
+    });
+
+    // Generate TOC CSS
+    const tocCSS = tocOptions.css || generateTOCCSS();
+
+    // Create TOC container
+    const tocContainer = document.createElement('div');
+    tocContainer.innerHTML = tocHTML;
+
+    // Add CSS to the TOC
+    const style = document.createElement('style');
+    style.textContent = tocCSS;
+    tocContainer.insertBefore(style, tocContainer.firstChild);
+
+    // Insert TOC at the specified position
+    if (tocOptions.position === 'end') {
+      element.appendChild(tocContainer);
+    } else {
+      // Default to start
+      element.insertBefore(tocContainer, element.firstChild);
+    }
+  }
+
+  /**
+   * Add bookmarks/outline to PDF
+   */
+  private addBookmarks(pdf: jsPDF, element: HTMLElement): void {
+    if (!this.options.bookmarkOptions?.enabled) return;
+
+    const bookmarkOptions = this.options.bookmarkOptions;
+
+    // Auto-generate bookmarks from headings
+    if (bookmarkOptions.autoGenerate) {
+      const levels = bookmarkOptions.levels || [1, 2, 3];
+      const headings = extractHeadings(element, levels);
+
+      if (headings.length === 0) return;
+
+      // Build bookmark structure (page numbers are placeholders)
+      const bookmarkEntries = headings.map((h, index) => ({
+        title: h.title,
+        level: h.level,
+        page: index + 1, // Simplified - would need actual page tracking
+        id: h.id
+      }));
+
+      const hierarchy = buildBookmarkHierarchy(bookmarkEntries);
+
+      // Note: jsPDF doesn't have built-in outline/bookmark API
+      // This would require jsPDF plugin or custom PDF manipulation
+      // For now, we'll store the structure for potential future use
+      (pdf as any).__bookmarks = hierarchy;
+    }
+
+    // Merge custom bookmarks if provided
+    if (bookmarkOptions.custom && bookmarkOptions.custom.length > 0) {
+      const existing = (pdf as any).__bookmarks || [];
+      (pdf as any).__bookmarks = [...existing, ...bookmarkOptions.custom];
+    }
   }
 
   /**

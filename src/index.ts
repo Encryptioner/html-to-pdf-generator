@@ -54,6 +54,11 @@ export type {
   TOCEntry,
   BookmarkOptions,
   BookmarkEntry,
+  PDFSecurityOptions,
+  PDFSecurityPermissions,
+  AsyncProcessingOptions,
+  PreviewOptions,
+  URLToPDFOptions,
 } from './types';
 export {
   PAPER_FORMATS,
