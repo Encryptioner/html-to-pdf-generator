@@ -443,7 +443,7 @@ const options: PDFGeneratorOptions = {
   scale: 2,
   imageQuality: 0.85,  // Legacy, use imageOptions instead
 
-  // Image Optimization (v5.1.0) ⭐ NEW
+  // Image Optimization
   imageOptions: {
     dpi: 300,                      // 72 (web), 150 (print), 300 (high-quality)
     format: 'jpeg',                // 'jpeg' | 'png' | 'webp'

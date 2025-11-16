@@ -88,7 +88,7 @@ const pdf = usePDFGenerator({
   imageQuality: 0.85,             // 0-1 (legacy, use imageOptions instead)
   compress: true,
 
-  // Image Optimization (v5.1.0) ⭐ NEW
+  // Image Optimization
   imageOptions: {
     dpi: 300,                      // 72 (web), 150 (print), 300 (high-quality)
     format: 'jpeg',                // 'jpeg' | 'png' | 'webp'

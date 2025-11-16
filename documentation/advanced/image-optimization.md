@@ -1,4 +1,4 @@
-# Image Optimization (v5.1.0)
+# Image Optimization
 
 > Enhanced image processing with DPI control, print-quality optimization, and transparent image handling.
 

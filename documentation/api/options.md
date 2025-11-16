@@ -26,7 +26,7 @@ interface PDFGeneratorOptions {
   optimizeImages?: boolean;
   maxImageWidth?: number;
   convertSVG?: boolean;
-  imageOptions?: ImageProcessingOptions;  // v5.1.0
+  imageOptions?: ImageProcessingOptions;
 
   // Table handling
   repeatTableHeaders?: boolean;
@@ -53,10 +53,10 @@ interface PDFGeneratorOptions {
   bookmarkOptions?: BookmarkOptions;
 
   // Advanced features (Phase 3)
-  securityOptions?: PDFSecurityOptions;  // v5.0.0
-  asyncOptions?: AsyncProcessingOptions;  // v5.0.0
-  previewOptions?: PreviewOptions;  // v5.0.0
-  urlToPDFOptions?: URLToPDFOptions;  // v5.0.0
+  securityOptions?: PDFSecurityOptions;
+  asyncOptions?: AsyncProcessingOptions;
+  previewOptions?: PreviewOptions;
+  urlToPDFOptions?: URLToPDFOptions;
 }
 ```
 
@@ -238,7 +238,7 @@ convertSVG: true   // Convert SVGs (recommended)
 convertSVG: false  // Keep SVGs as-is
 ```
 
-### imageOptions ⭐ NEW (v5.1.0)
+### imageOptions
 
 Advanced image processing options for print-quality PDFs.
 

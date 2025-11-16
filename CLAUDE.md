@@ -207,7 +207,7 @@ await generateBatchPDF(items, 'report.pdf');
 - React: `useBatchPDFGenerator()` hook (src/adapters/react/)
 - Vue/Svelte: Use core functions directly
 
-### Phase 1 Features (Implemented in v4.0.0)
+### Phase 1 Features
 
 #### Watermark Support
 
@@ -294,7 +294,7 @@ Apply @media print styles (core.ts:183-214):
 
 When set to 'print', the library extracts and applies CSS rules from `@media print` blocks, ensuring print-specific styles are used in the generated PDF.
 
-### Phase 2 Features (Implemented in v4.0.0)
+### Phase 2 Features
 
 #### Template Variable System
 
@@ -462,7 +462,7 @@ Create PDF outline for easy navigation (utils.ts:697-732):
 
 **Note:** Full bookmark implementation in core.ts requires jsPDF outline API integration (Phase 3 enhancement).
 
-### Phase 3 Features (Implemented in v5.0.0)
+### Phase 3 Features
 
 #### PDF Security/Encryption
 
@@ -711,7 +711,7 @@ For production URL-to-PDF, use server-side solutions:
 - Development/testing
 - Preview generation
 
-### Phase 4 Features (Implemented in v5.1.0)
+### Phase 4 Features
 
 #### Enhanced Image Optimization with DPI Control
 

@@ -34,7 +34,7 @@
 - **[Async Processing](./advanced/async-processing.md)** - Background generation with webhooks
 - **[Preview Component](./advanced/preview.md)** - Real-time PDF preview (React)
 - **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF
-- **[Image Optimization](./advanced/image-optimization.md)** ⭐ NEW - DPI control and print quality (v5.1.0)
+- **[Image Optimization](./advanced/image-optimization.md)** - DPI control and print quality
 
 ### API Reference
 - **[PDFGenerator Class](./api/pdf-generator.md)** - Core PDF generator API
