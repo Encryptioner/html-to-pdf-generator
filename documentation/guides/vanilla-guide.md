@@ -441,7 +441,18 @@ const options: PDFGeneratorOptions = {
   showPageNumbers: true,
   compress: true,
   scale: 2,
-  imageQuality: 0.85,
+  imageQuality: 0.85,  // Legacy, use imageOptions instead
+
+  // Image Optimization (v5.1.0) ⭐ NEW
+  imageOptions: {
+    dpi: 300,                      // 72 (web), 150 (print), 300 (high-quality)
+    format: 'jpeg',                // 'jpeg' | 'png' | 'webp'
+    backgroundColor: '#ffffff',    // Background for transparent images
+    optimizeForPrint: true,        // Enable print optimizations
+    interpolate: true,             // Image smoothing
+    quality: 0.92                  // Compression quality
+  },
+
   onProgress: (progress: number) => {
     console.log(`Progress: ${progress}%`);
   },
