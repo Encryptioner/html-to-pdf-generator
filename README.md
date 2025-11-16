@@ -42,25 +42,38 @@
 ✅ Image format selection (JPEG/PNG/WebP)
 ✅ Searchable text support (built-in)
 
+### Server-Side Support 🆕
+✅ Full Node.js/TypeScript backend support
+✅ Puppeteer-based true browser rendering
+✅ Works in Express, Next.js, serverless functions
+✅ All Phase 1-4 features available server-side
+✅ Automatic browser lifecycle management
+✅ Hybrid architecture: one package for frontend + backend
+
 ### MCP Server Support 🆕
-✅ Server-side PDF generation via Model Context Protocol
-✅ Claude Desktop integration with 3 token-efficient tools
+✅ Model Context Protocol integration
+✅ Claude Desktop with 3 token-efficient tools
+✅ Dual-mode: Puppeteer (best) or JSDOM (fallback)
 ✅ File system access for saving PDFs
-✅ All features available server-side
-✅ Zero browser dependencies
 ✅ Batch PDF generation with auto-scaling
 ✅ Template support with variable substitution
-✅ URL to PDF conversion (CORS-aware)
+✅ URL to PDF conversion
 
 ## Quick Start
 
 ### Installation
 
+**Frontend Only:**
 ```bash
 npm install @encryptioner/html-to-pdf-generator
 ```
 
-### Basic Usage
+**Frontend + Backend (with Puppeteer):**
+```bash
+npm install @encryptioner/html-to-pdf-generator puppeteer
+```
+
+### Browser Usage
 
 ```typescript
 import { generatePDF } from '@encryptioner/html-to-pdf-generator';
@@ -71,6 +84,31 @@ await generatePDF(element, 'document.pdf', {
   showPageNumbers: true,
 });
 ```
+
+### Server-Side Usage (Node.js) 🆕
+
+```typescript
+import { ServerPDFGenerator } from '@encryptioner/html-to-pdf-generator/node';
+
+// Recommended: Use class for multiple PDFs
+const generator = new ServerPDFGenerator({ format: 'a4' });
+
+await generator.generatePDF(
+  '<h1>Server-Side PDF</h1><p>True browser rendering!</p>',
+  'output.pdf'
+);
+
+await generator.close(); // Important: cleanup
+
+// Or use convenience function (auto-cleanup)
+import { generateServerPDF } from '@encryptioner/html-to-pdf-generator/node';
+
+await generateServerPDF(htmlString, 'output.pdf', {
+  watermark: { text: 'DRAFT', opacity: 0.3 }
+});
+```
+
+**📖 [Server-Side Guide](./SERVER_SIDE_GUIDE.md)** - Complete backend documentation
 
 ### With React
 
