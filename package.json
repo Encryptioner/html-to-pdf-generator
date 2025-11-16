@@ -16,7 +16,11 @@
     "multi-page",
     "pagination",
     "document-generator",
-    "framework-agnostic"
+    "framework-agnostic",
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "server-side"
   ],
   "author": {
     "name": "Mir Mursalin Ankur",
@@ -34,6 +38,9 @@
   "homepage": "https://github.com/encryptioner/html-to-pdf-generator#readme",
   "packageManager": "pnpm@9.0.0",
   "type": "module",
+  "bin": {
+    "html-to-pdf-mcp": "./mcp/dist/index.js"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -74,17 +81,22 @@
   },
   "files": [
     "dist",
+    "mcp/dist",
+    "mcp/package.json",
+    "mcp/README.md",
     "README.md",
     "LICENSE.md"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:lib && pnpm run build:mcp",
+    "build:lib": "tsup",
+    "build:mcp": "cd mcp && pnpm install && pnpm run build",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist && rm -rf mcp/dist",
     "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run typecheck"
   },
   "dependencies": {

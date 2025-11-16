@@ -42,6 +42,13 @@
 ✅ Image format selection (JPEG/PNG/WebP)
 ✅ Searchable text support (built-in)
 
+### MCP Server Support 🆕
+✅ Server-side PDF generation via Model Context Protocol
+✅ Claude Desktop integration
+✅ File system access for saving PDFs
+✅ All features available server-side
+✅ Zero browser dependencies
+
 ## Quick Start
 
 ### Installation
@@ -123,6 +130,31 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
   {$isGenerating ? `${$progress}%` : 'Download PDF'}
 </button>
 ```
+
+### With MCP Server (Claude Desktop) 🆕
+
+The package includes an MCP server for server-side PDF generation via Claude Desktop:
+
+```bash
+# Configure Claude Desktop (see MCP_QUICKSTART.md for details)
+# Then use natural language with Claude:
+```
+
+**Example conversation:**
+```
+You: Generate a PDF with title "My Report" and save to ~/Documents/report.pdf
+
+Claude: I'll create that PDF for you.
+[Uses generate_pdf MCP tool]
+
+✅ PDF generated successfully!
+- File: /Users/you/Documents/report.pdf
+- Size: 15.2 KB
+- Format: A4 Portrait
+```
+
+**📖 [MCP Quick Start Guide](./MCP_QUICKSTART.md)** - Get started in 5 minutes
+**📘 [MCP Server Docs](./mcp/README.md)** - Complete MCP documentation
 
 ## Documentation
 
