@@ -35,6 +35,13 @@
 ✅ Real-time preview component (React)
 ✅ URL to PDF conversion
 
+### Phase 4 Features (v5.1.0) ⭐ NEW
+✅ Enhanced DPI control (72/150/300 DPI)
+✅ Print-quality image optimization
+✅ Transparent image background handling
+✅ Image format selection (JPEG/PNG/WebP)
+✅ Searchable text support (built-in)
+
 ## Quick Start
 
 ### Installation
@@ -149,6 +156,7 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 - **[Async Processing](./documentation/advanced/async-processing.md)** - Background generation with webhooks
 - **[Preview Component](./documentation/advanced/preview.md)** - Real-time PDF preview (React)
 - **[URL to PDF](./documentation/advanced/url-to-pdf.md)** - Convert web pages to PDF
+- **[Image Optimization](./documentation/advanced/image-optimization.md)** ⭐ NEW - DPI control & print quality
 
 ### API Reference
 - **[Options Reference](./documentation/api/options.md)** - All configuration options
@@ -175,9 +183,12 @@ First-class support for React, Vue 3, Svelte, and vanilla JavaScript/TypeScript 
 ### OKLCH Color Support
 Native support for OKLCH colors via html2canvas-pro, fully compatible with Tailwind CSS v4.
 
-### Image Handling
+### Image Handling ⭐ Enhanced in v5.1.0
 - SVG to image conversion
 - Image optimization & compression
+- DPI control (72/150/300) for print quality
+- Format selection (JPEG/PNG/WebP)
+- Transparent image background handling
 - Background image support
 - Automatic preloading
 

@@ -381,6 +381,104 @@ For production URL-to-PDF, use server-side solutions:
 - wkhtmltopdf (CLI)
 - Cloud services (PDFShift, CloudConvert)
 
+### Phase 4 Features (v5.1.0) ⭐ NEW
+
+#### Enhanced Image Optimization with DPI Control
+- ✅ **DPI Control** - 72 DPI (web), 150 DPI (print), 300 DPI (high-quality)
+- ✅ **Format Selection** - Choose JPEG, PNG, or WebP output
+- ✅ **Transparent Background Handling** - Configurable background color for transparent images
+- ✅ **Black Background Bug Fix** - Fixed critical issue where transparent images showed black backgrounds
+- ✅ **Interpolation Control** - Enable/disable image smoothing to prevent blur
+- ✅ **Print Optimization** - Dedicated mode for print-quality output
+- ✅ **Quality Control** - Fine-tune compression quality (0.1-1.0)
+- ✅ **DPI Utilities** - Helper functions for DPI calculations
+- ✅ **Transparency Detection** - Automatically detect transparent pixels
+
+**API:**
+```typescript
+import {
+  optimizeImage,
+  getRecommendedDPI,
+  calculateDPIDimensions,
+  hasTransparency
+} from '@encryptioner/html-to-pdf-generator';
+
+// Enhanced image optimization
+const optimizedSrc = await optimizeImage(imgElement, {
+  dpi: 300,                       // Print quality DPI
+  format: 'jpeg',                 // Output format
+  backgroundColor: '#ffffff',     // Background for transparent images
+  optimizeForPrint: true,         // Enable print optimizations
+  interpolate: true,              // High-quality scaling
+  quality: 0.92                   // JPEG quality
+});
+
+// Get recommended DPI for use case
+const dpi = getRecommendedDPI('high-quality-print'); // Returns 300
+
+// Calculate pixel dimensions for physical size
+const { width, height } = calculateDPIDimensions(8.5, 11, 300); // Letter size at 300 DPI
+
+// Detect transparency
+const hasAlpha = await hasTransparency(imgElement); // true/false
+```
+
+**Integration with PDF Generation:**
+```typescript
+const generator = new PDFGenerator({
+  imageOptions: {
+    dpi: 300,
+    format: 'jpeg',
+    backgroundColor: '#ffffff',
+    optimizeForPrint: true,
+    quality: 0.92
+  }
+});
+```
+
+**Extended ImageProcessingOptions:**
+```typescript
+interface ImageProcessingOptions {
+  maxWidth?: number;              // Max width in pixels
+  maxHeight?: number;             // Max height in pixels
+  quality?: number;               // 0.1-1.0 (default: 0.85)
+  compress?: boolean;             // Enable compression
+  grayscale?: boolean;            // Convert to grayscale
+  dpi?: number;                   // NEW: DPI control (72/150/300)
+  format?: 'jpeg' | 'png' | 'webp'; // NEW: Output format
+  backgroundColor?: string;        // NEW: Background color (default: '#ffffff')
+  interpolate?: boolean;          // NEW: Image smoothing (default: true)
+  optimizeForPrint?: boolean;     // NEW: Print optimization
+}
+```
+
+**Critical Bug Fix:**
+Fixed black background issue when converting transparent images to JPEG format. The fix ensures canvas is filled with background color BEFORE drawing the image:
+
+```typescript
+// In optimizeImage() and imageToDataURL()
+if (format === 'jpeg' || backgroundColor !== 'transparent') {
+  ctx.fillStyle = backgroundColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
+```
+
+**Impact:** All PDFs with transparent images (PNG with transparency, SVG with transparent backgrounds) now render correctly with white backgrounds instead of black.
+
+#### Accessibility Features (Built-in)
+- ✅ **Searchable Text** - Text rendered as actual text elements (not images)
+- ✅ **Screen Reader Support** - Accessible to assistive technologies
+- ✅ **Selectable Text** - Users can select and copy text
+- ✅ **SEO-Friendly** - Text searchable by PDF viewers and search engines
+
+**Why Our Library Excels:**
+Unlike screenshot-based solutions (Puppeteer screenshots, PhantomJS), our library uses jsPDF's native text rendering which maintains text as actual text elements in the PDF. This provides:
+- Full searchability with browser/PDF reader search
+- Accessibility for users with disabilities
+- Better user experience (copyable text)
+- SEO benefits for web-based PDF viewers
+
 ### 1. Multi-Page PDF Generation
 - ✅ **Smart Continuous Pagination** - No awkward content cuts or large bottom spaces
 - ✅ **Single-Page Optimization** - Content that fits on one page renders as single-page PDF
@@ -707,9 +805,10 @@ This is a **production-ready** PDF generation library with:
 - ✅ **Performance optimized**
 - ✅ **NPM package ready**
 
-**Version 5.0.0** includes:
+**Version 5.1.0** includes:
 - 🎯 Phase 1: Watermarks, Headers/Footers, Metadata, Print CSS, Batch Generation
 - 🎯 Phase 2: Templates, Fonts, TOC, Bookmarks
 - 🎯 Phase 3: Security, Async Processing, Preview Component, URL to PDF
+- ⭐ Phase 4: Enhanced Image Optimization, DPI Control, Transparent Image Fix, Accessibility
 
-Perfect for generating professional PDFs from HTML content across all major frameworks!
+Perfect for generating professional, print-quality PDFs from HTML content across all major frameworks!

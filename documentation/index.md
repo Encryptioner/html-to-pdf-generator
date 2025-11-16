@@ -30,6 +30,11 @@
 - **[Font Handling](./advanced/fonts.md)** - Custom fonts and web-safe replacements
 - **[Table of Contents](./advanced/table-of-contents.md)** - Auto-generate TOC from headings
 - **[Bookmarks](./advanced/bookmarks.md)** - PDF outline for navigation
+- **[Security & Encryption](./advanced/security.md)** - Password protection and permissions
+- **[Async Processing](./advanced/async-processing.md)** - Background generation with webhooks
+- **[Preview Component](./advanced/preview.md)** - Real-time PDF preview (React)
+- **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF
+- **[Image Optimization](./advanced/image-optimization.md)** ⭐ NEW - DPI control and print quality (v5.1.0)
 
 ### API Reference
 - **[PDFGenerator Class](./api/pdf-generator.md)** - Core PDF generator API
