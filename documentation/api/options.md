@@ -26,6 +26,7 @@ interface PDFGeneratorOptions {
   optimizeImages?: boolean;
   maxImageWidth?: number;
   convertSVG?: boolean;
+  imageOptions?: ImageProcessingOptions;  // v5.1.0
 
   // Table handling
   repeatTableHeaders?: boolean;
@@ -40,7 +41,7 @@ interface PDFGeneratorOptions {
   onComplete?: (blob: Blob) => void;
   onError?: (error: Error) => void;
 
-  // Advanced features
+  // Advanced features (Phase 1-2)
   watermark?: WatermarkOptions;
   headerTemplate?: HeaderFooterTemplate;
   footerTemplate?: HeaderFooterTemplate;
@@ -50,6 +51,12 @@ interface PDFGeneratorOptions {
   fontOptions?: FontOptions;
   tocOptions?: TOCOptions;
   bookmarkOptions?: BookmarkOptions;
+
+  // Advanced features (Phase 3)
+  securityOptions?: PDFSecurityOptions;  // v5.0.0
+  asyncOptions?: AsyncProcessingOptions;  // v5.0.0
+  previewOptions?: PreviewOptions;  // v5.0.0
+  urlToPDFOptions?: URLToPDFOptions;  // v5.0.0
 }
 ```
 
@@ -230,6 +237,68 @@ Convert SVG elements to images before PDF generation.
 convertSVG: true   // Convert SVGs (recommended)
 convertSVG: false  // Keep SVGs as-is
 ```
+
+### imageOptions ⭐ NEW (v5.1.0)
+
+Advanced image processing options for print-quality PDFs.
+
+- **Type**: `ImageProcessingOptions`
+- **Default**: `undefined` (uses defaults)
+
+```typescript
+interface ImageProcessingOptions {
+  maxWidth?: number;               // Max width in pixels
+  maxHeight?: number;              // Max height in pixels
+  quality?: number;                // 0.1-1.0 (default: 0.85)
+  compress?: boolean;              // Enable compression
+  grayscale?: boolean;             // Convert to grayscale
+  dpi?: number;                    // DPI control (72/150/300)
+  format?: 'jpeg' | 'png' | 'webp'; // Output format
+  backgroundColor?: string;         // Background color (default: '#ffffff')
+  interpolate?: boolean;           // Image smoothing (default: true)
+  optimizeForPrint?: boolean;      // Print optimization
+}
+```
+
+**Example:**
+```javascript
+// High-quality print PDF
+imageOptions: {
+  dpi: 300,                      // Print quality
+  format: 'jpeg',                // Output format
+  backgroundColor: '#ffffff',    // Background for transparent images
+  optimizeForPrint: true,        // Enable print optimizations
+  interpolate: true,             // High-quality scaling
+  quality: 0.92                  // JPEG quality
+}
+
+// Web PDF (optimized for screen)
+imageOptions: {
+  dpi: 72,                       // Screen quality
+  format: 'jpeg',
+  quality: 0.85,
+  optimizeForPrint: false
+}
+
+// Preserve transparency
+imageOptions: {
+  format: 'png',                 // PNG preserves transparency
+  backgroundColor: 'transparent',
+  interpolate: true
+}
+```
+
+**DPI Guidelines:**
+- **72 DPI**: Web/screen display
+- **150 DPI**: Standard print quality
+- **300 DPI**: High-quality professional print
+
+**Image Formats:**
+- **JPEG**: Best for photos, smaller file size, no transparency
+- **PNG**: Supports transparency, larger file size
+- **WebP**: Modern format, good compression, transparency support
+
+See [Image Optimization Guide](../advanced/image-optimization.md) for detailed documentation.
 
 ## Table Handling
 
