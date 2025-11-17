@@ -4,7 +4,23 @@
  * Helper functions for PDF generation, color conversion, and styling
  */
 
-import type { PDFGeneratorOptions, PDFPageConfig } from './types';
+import type {
+  PDFGeneratorOptions,
+  PDFPageConfig,
+  WatermarkOptions,
+  HeaderFooterTemplate,
+  PDFMetadata,
+  TemplateOptions,
+  FontOptions,
+  TOCOptions,
+  BookmarkOptions,
+  TemplateContext,
+  TOCEntry,
+  BookmarkEntry,
+  PDFSecurityOptions,
+  AsyncProcessingOptions,
+  PreviewOptions,
+} from './types';
 
 /** Standard paper formats in mm */
 export const PAPER_FORMATS = {
@@ -38,6 +54,18 @@ export const DEFAULT_OPTIONS: Required<PDFGeneratorOptions> = {
   onProgress: () => {},
   onComplete: () => {},
   onError: () => {},
+  emulateMediaType: 'screen',
+  watermark: undefined as unknown as WatermarkOptions,
+  headerTemplate: undefined as unknown as HeaderFooterTemplate,
+  footerTemplate: undefined as unknown as HeaderFooterTemplate,
+  metadata: undefined as unknown as PDFMetadata,
+  templateOptions: undefined as unknown as TemplateOptions,
+  fontOptions: undefined as unknown as FontOptions,
+  tocOptions: undefined as unknown as TOCOptions,
+  bookmarkOptions: undefined as unknown as BookmarkOptions,
+  securityOptions: undefined as unknown as PDFSecurityOptions,
+  asyncOptions: undefined as unknown as AsyncProcessingOptions,
+  previewOptions: undefined as unknown as PreviewOptions,
 };
 
 /**
@@ -354,4 +382,677 @@ export function calculateOptimalScale(
 ): number {
   const scale = targetWidth / contentWidth;
   return Math.min(scale, maxScale);
+}
+
+/**
+ * Process template string with variables
+ * Supports: {{pageNumber}}, {{totalPages}}, {{date}}, {{title}}
+ */
+export function processTemplate(
+  template: string,
+  variables: Record<string, string | number>
+): string {
+  let processed = template;
+
+  Object.entries(variables).forEach(([key, value]) => {
+    const regex = new RegExp(`{{${key}}}`, 'g');
+    processed = processed.replace(regex, String(value));
+  });
+
+  return processed;
+}
+
+/**
+ * Parse hex color to RGB
+ */
+export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+/**
+ * Convert OKLCH to linear RGB
+ * Based on OKLCH color space specification
+ */
+function oklchToLinearRgb(L: number, C: number, h: number): [number, number, number] {
+  // Convert OKLCH to OKLab
+  const hRad = (h * Math.PI) / 180;
+  const a = C * Math.cos(hRad);
+  const b = C * Math.sin(hRad);
+
+  // OKLab to linear RGB transformation matrix
+  const l_ = L + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = L - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = L - 0.0894841775 * a - 1.2914855480 * b;
+
+  const l = l_ * l_ * l_;
+  const m = m_ * m_ * m_;
+  const s = s_ * s_ * s_;
+
+  return [
+    +4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s,
+  ];
+}
+
+/**
+ * Apply gamma correction to linear RGB
+ */
+function linearToSrgb(c: number): number {
+  const abs = Math.abs(c);
+  if (abs > 0.0031308) {
+    return (Math.sign(c) || 1) * (1.055 * Math.pow(abs, 1 / 2.4) - 0.055);
+  }
+  return 12.92 * c;
+}
+
+/**
+ * Clamp value between 0 and 255
+ */
+function clamp(value: number): number {
+  return Math.max(0, Math.min(255, Math.round(value * 255)));
+}
+
+/**
+ * Convert OKLCH color to RGB
+ * Handles various OKLCH formats:
+ * - oklch(L C H)
+ * - oklch(L C H / alpha)
+ * - oklch(L% C% H)
+ * - oklch(L% C% H / alpha)
+ *
+ * @param oklchString - OKLCH color string (e.g., "oklch(0.5 0.2 180)" or "oklch(50% 20% 180deg / 0.5)")
+ * @returns RGB color string (e.g., "rgb(123, 45, 67)" or "rgba(123, 45, 67, 0.5)")
+ */
+export function oklchToRgb(oklchString: string): string | null {
+  // Match OKLCH format with optional alpha
+  // Supports: oklch(L C H), oklch(L C H / alpha), oklch(L% C% H), oklch(L% C% Hdeg / alpha%), etc.
+  const oklchRegex = /oklch\(\s*([\d.]+)%?\s+([\d.]+)%?\s+([\d.]+)(?:deg|rad|grad|turn)?\s*(?:\/\s*([\d.]+)%?\s*)?\)/i;
+  const match = oklchString.match(oklchRegex);
+
+  if (!match) {
+    return null;
+  }
+
+  let [, lStr, cStr, hStr, alphaStr] = match;
+
+  // Parse L (lightness): 0-1 or 0-100%
+  let L = parseFloat(lStr);
+  if (oklchString.includes(`${lStr}%`)) {
+    L = L / 100;
+  }
+  // If L > 1, assume it's a percentage without % symbol
+  if (L > 1) {
+    L = L / 100;
+  }
+
+  // Parse C (chroma): 0-0.4 typical range, but can be higher
+  let C = parseFloat(cStr);
+  if (oklchString.includes(`${cStr}%`)) {
+    C = C / 100 * 0.4; // Scale percentage to typical chroma range
+  }
+
+  // Parse H (hue): 0-360 degrees
+  let h = parseFloat(hStr);
+  const hMatch = hStr.match(/([\d.]+)(deg|rad|grad|turn)?/i);
+  if (hMatch && hMatch[2]) {
+    const unit = hMatch[2].toLowerCase();
+    if (unit === 'rad') {
+      h = (h * 180) / Math.PI;
+    } else if (unit === 'grad') {
+      h = (h * 360) / 400;
+    } else if (unit === 'turn') {
+      h = h * 360;
+    }
+  }
+
+  // Parse alpha (optional): 0-1 or 0-100%
+  let alpha: number | undefined;
+  if (alphaStr) {
+    alpha = parseFloat(alphaStr);
+    if (oklchString.includes(`${alphaStr}%`)) {
+      alpha = alpha / 100;
+    }
+    // Clamp alpha between 0 and 1
+    alpha = Math.max(0, Math.min(1, alpha));
+  }
+
+  // Convert OKLCH to linear RGB
+  const [rLinear, gLinear, bLinear] = oklchToLinearRgb(L, C, h);
+
+  // Apply gamma correction and convert to 0-255 range
+  const r = clamp(linearToSrgb(rLinear));
+  const g = clamp(linearToSrgb(gLinear));
+  const b = clamp(linearToSrgb(bLinear));
+
+  // Return RGB or RGBA
+  if (alpha !== undefined) {
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+/**
+ * Convert all OKLCH colors in CSS text to RGB
+ * Handles both inline styles and CSS rules
+ *
+ * @param css - CSS text containing OKLCH colors
+ * @returns CSS text with OKLCH colors converted to RGB
+ */
+export function convertOklchToRgbInCSS(css: string): string {
+  // Match all OKLCH color functions
+  const oklchRegex = /oklch\([^)]+\)/gi;
+
+  return css.replace(oklchRegex, (match) => {
+    const rgb = oklchToRgb(match);
+    return rgb || match; // Return original if conversion fails
+  });
+}
+
+/**
+ * Convert OKLCH colors in element's inline styles and computed styles
+ * Modifies the element in place
+ *
+ * @param element - HTML element to process
+ */
+export function convertOklchInElement(element: HTMLElement): void {
+  // Process inline styles on root element
+  if (element.style.cssText) {
+    element.style.cssText = convertOklchToRgbInCSS(element.style.cssText);
+  }
+
+  // Also check computed styles and apply as inline if they contain OKLCH
+  const computedStyle = window.getComputedStyle(element);
+  _applyOklchConversionFromComputed(element, computedStyle);
+
+  // Process all child elements recursively
+  const children = element.querySelectorAll('*');
+  children.forEach((child) => {
+    if (child instanceof HTMLElement) {
+      // Convert inline styles
+      if (child.style.cssText) {
+        child.style.cssText = convertOklchToRgbInCSS(child.style.cssText);
+      }
+
+      // Convert computed styles
+      const childComputed = window.getComputedStyle(child);
+      _applyOklchConversionFromComputed(child, childComputed);
+    }
+  });
+}
+
+/**
+ * Helper function to check computed styles for OKLCH and apply converted values
+ * @internal
+ */
+function _applyOklchConversionFromComputed(element: HTMLElement, computedStyle: CSSStyleDeclaration): void {
+  // Properties that commonly use colors
+  const colorProperties = [
+    'color',
+    'background-color',
+    'border-color',
+    'border-top-color',
+    'border-right-color',
+    'border-bottom-color',
+    'border-left-color',
+    'outline-color',
+    'text-decoration-color',
+    'column-rule-color',
+    'caret-color',
+  ];
+
+  colorProperties.forEach((prop) => {
+    const value = computedStyle.getPropertyValue(prop);
+    if (value && value.includes('oklch')) {
+      const converted = convertOklchToRgbInCSS(value);
+      // Apply as inline style to override computed style
+      element.style.setProperty(prop, converted, 'important');
+    }
+  });
+
+  // Handle background shorthand which might contain OKLCH
+  const background = computedStyle.getPropertyValue('background');
+  if (background && background.includes('oklch')) {
+    const converted = convertOklchToRgbInCSS(background);
+    element.style.setProperty('background', converted, 'important');
+  }
+
+  // Handle border shorthand
+  const border = computedStyle.getPropertyValue('border');
+  if (border && border.includes('oklch')) {
+    const converted = convertOklchToRgbInCSS(border);
+    element.style.setProperty('border', converted, 'important');
+  }
+}
+
+/**
+ * Process all stylesheets in an element to convert OKLCH to RGB
+ * Creates new style elements with converted CSS
+ *
+ * @param element - HTML element containing stylesheets
+ */
+export function convertOklchInStylesheets(element: HTMLElement): void {
+  // Process <style> tags
+  const styleTags = element.querySelectorAll('style');
+  styleTags.forEach((styleTag) => {
+    if (styleTag.textContent) {
+      styleTag.textContent = convertOklchToRgbInCSS(styleTag.textContent);
+    }
+  });
+}
+
+/**
+ * Extract all CSS rules from document stylesheets that contain OKLCH
+ * and create a comprehensive override stylesheet
+ *
+ * @returns CSS text with all OKLCH colors converted to RGB
+ */
+export function extractAndConvertOklchFromStylesheets(): string {
+  const cssRules: string[] = [];
+
+  // Iterate through all stylesheets
+  Array.from(document.styleSheets).forEach((sheet) => {
+    try {
+      // Try to access cssRules (may fail for cross-origin stylesheets)
+      const rules = sheet.cssRules || sheet.rules;
+      if (!rules) return;
+
+      Array.from(rules).forEach((rule) => {
+        const cssText = rule.cssText;
+
+        // Check if rule contains OKLCH
+        if (cssText && cssText.includes('oklch')) {
+          // Convert OKLCH to RGB in this rule
+          const converted = convertOklchToRgbInCSS(cssText);
+          cssRules.push(converted);
+        }
+      });
+    } catch (e) {
+      // Silently fail for cross-origin stylesheets
+      // This is expected for external CSS files from different domains
+    }
+  });
+
+  return cssRules.join('\n');
+}
+
+/**
+ * Get watermark rotation angle based on position
+ */
+export function getWatermarkRotation(position: string): number {
+  if (position === 'diagonal') return 45;
+  return 0;
+}
+
+/**
+ * Calculate watermark position coordinates
+ */
+export function calculateWatermarkPosition(
+  position: string,
+  pageWidth: number,
+  pageHeight: number,
+  textWidth: number,
+  textHeight: number
+): { x: number; y: number } {
+  switch (position) {
+    case 'center':
+      return {
+        x: pageWidth / 2,
+        y: pageHeight / 2
+      };
+    case 'diagonal':
+      return {
+        x: pageWidth / 2,
+        y: pageHeight / 2
+      };
+    case 'top-left':
+      return {
+        x: textWidth / 2 + 10,
+        y: textHeight / 2 + 10
+      };
+    case 'top-right':
+      return {
+        x: pageWidth - textWidth / 2 - 10,
+        y: textHeight / 2 + 10
+      };
+    case 'bottom-left':
+      return {
+        x: textWidth / 2 + 10,
+        y: pageHeight - textHeight / 2 - 10
+      };
+    case 'bottom-right':
+      return {
+        x: pageWidth - textWidth / 2 - 10,
+        y: pageHeight - textHeight / 2 - 10
+      };
+    default:
+      return {
+        x: pageWidth / 2,
+        y: pageHeight / 2
+      };
+  }
+}
+
+/**
+ * Format date for templates
+ */
+export function formatDate(date: Date = new Date()): string {
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+}
+
+/**
+ * Process template with context variables
+ * Supports simple variables: {{variable}}
+ * Supports loops: {{#each items}}{{name}}{{/each}}
+ * Supports conditionals: {{#if condition}}text{{/if}}
+ */
+export function processTemplateWithContext(
+  template: string,
+  context: TemplateContext,
+  options: { enableLoops?: boolean; enableConditionals?: boolean } = {}
+): string {
+  let processed = template;
+
+  // Process simple variables first: {{variable}}
+  Object.entries(context).forEach(([key, value]) => {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      const regex = new RegExp(`{{${key}}}`, 'g');
+      processed = processed.replace(regex, String(value));
+    }
+  });
+
+  // Process loops: {{#each items}}{{name}}{{/each}}
+  if (options.enableLoops) {
+    const loopRegex = /{{#each\s+(\w+)}}([\s\S]*?){{\/each}}/g;
+    processed = processed.replace(loopRegex, (match, arrayKey, template) => {
+      const arrayData = context[arrayKey];
+      if (!Array.isArray(arrayData)) return match;
+
+      return arrayData
+        .map((item: any) => {
+          let itemHtml = template;
+          if (typeof item === 'object') {
+            Object.entries(item).forEach(([key, value]) => {
+              const regex = new RegExp(`{{${key}}}`, 'g');
+              itemHtml = itemHtml.replace(regex, String(value));
+            });
+          } else {
+            itemHtml = itemHtml.replace(/{{this}}/g, String(item));
+          }
+          return itemHtml;
+        })
+        .join('');
+    });
+  }
+
+  // Process conditionals: {{#if condition}}text{{/if}}
+  if (options.enableConditionals) {
+    const ifRegex = /{{#if\s+(\w+)}}([\s\S]*?){{\/if}}/g;
+    processed = processed.replace(ifRegex, (match, conditionKey, content) => {
+      const condition = context[conditionKey];
+      return condition ? content : '';
+    });
+  }
+
+  return processed;
+}
+
+/**
+ * Extract headings from HTML element for TOC or bookmarks
+ */
+export function extractHeadings(
+  element: HTMLElement,
+  levels: number[] = [1, 2, 3]
+): Array<{ title: string; level: number; id: string; element: HTMLElement }> {
+  const headings: Array<{ title: string; level: number; id: string; element: HTMLElement }> = [];
+  const selectors = levels.map(level => `h${level}`).join(', ');
+  const headingElements = element.querySelectorAll(selectors);
+
+  headingElements.forEach((heading, index) => {
+    const level = parseInt(heading.tagName.substring(1));
+    const title = heading.textContent?.trim() || '';
+    let id = heading.id;
+
+    // Generate ID if not present
+    if (!id) {
+      id = `heading-${index}-${title.toLowerCase().replace(/\s+/g, '-').substring(0, 30)}`;
+      heading.id = id;
+    }
+
+    headings.push({
+      title,
+      level,
+      id,
+      element: heading as HTMLElement
+    });
+  });
+
+  return headings;
+}
+
+/**
+ * Build hierarchical TOC structure from flat heading list
+ */
+export function buildTOCHierarchy(
+  headings: Array<{ title: string; level: number; page: number; id: string }>
+): TOCEntry[] {
+  const root: TOCEntry[] = [];
+  const stack: Array<TOCEntry & { level: number }> = [];
+
+  headings.forEach(heading => {
+    const entry: TOCEntry & { level: number } = {
+      title: heading.title,
+      level: heading.level,
+      page: heading.page,
+      id: heading.id,
+      children: []
+    };
+
+    // Find parent level
+    while (stack.length > 0 && stack[stack.length - 1].level >= heading.level) {
+      stack.pop();
+    }
+
+    if (stack.length === 0) {
+      root.push(entry);
+    } else {
+      const parent = stack[stack.length - 1];
+      if (!parent.children) parent.children = [];
+      parent.children.push(entry);
+    }
+
+    stack.push(entry);
+  });
+
+  return root;
+}
+
+/**
+ * Generate TOC HTML from entries
+ */
+export function generateTOCHTML(
+  entries: TOCEntry[],
+  options: {
+    includePageNumbers?: boolean;
+    indentPerLevel?: number;
+    title?: string;
+  } = {}
+): string {
+  const { includePageNumbers = true, indentPerLevel = 10, title = 'Table of Contents' } = options;
+
+  let html = `<div class="pdf-toc">`;
+  if (title) {
+    html += `<h1 class="pdf-toc-title">${title}</h1>`;
+  }
+  html += `<div class="pdf-toc-entries">`;
+
+  const renderEntry = (entry: TOCEntry, depth: number = 0): string => {
+    const indent = depth * indentPerLevel;
+    let entryHtml = `<div class="pdf-toc-entry pdf-toc-level-${entry.level}" style="margin-left: ${indent}mm;">`;
+    entryHtml += `<span class="pdf-toc-entry-title">${entry.title}</span>`;
+    if (includePageNumbers) {
+      entryHtml += `<span class="pdf-toc-entry-page">${entry.page}</span>`;
+    }
+    entryHtml += `</div>`;
+
+    if (entry.children && entry.children.length > 0) {
+      entry.children.forEach(child => {
+        entryHtml += renderEntry(child, depth + 1);
+      });
+    }
+
+    return entryHtml;
+  };
+
+  entries.forEach(entry => {
+    html += renderEntry(entry);
+  });
+
+  html += `</div></div>`;
+  return html;
+}
+
+/**
+ * Generate default TOC CSS
+ */
+export function generateTOCCSS(): string {
+  return `
+    .pdf-toc {
+      page-break-after: always;
+      padding: 20px 0;
+    }
+    .pdf-toc-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+    .pdf-toc-entries {
+      line-height: 1.6;
+    }
+    .pdf-toc-entry {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      border-bottom: 1px dotted #ccc;
+    }
+    .pdf-toc-entry-title {
+      flex: 1;
+    }
+    .pdf-toc-entry-page {
+      margin-left: 10px;
+      font-weight: bold;
+    }
+    .pdf-toc-level-1 {
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    .pdf-toc-level-2 {
+      font-size: 14px;
+    }
+    .pdf-toc-level-3 {
+      font-size: 12px;
+      color: #666;
+    }
+  `;
+}
+
+/**
+ * Build hierarchical bookmark structure from flat heading list
+ */
+export function buildBookmarkHierarchy(
+  headings: Array<{ title: string; level: number; page: number; id: string }>
+): BookmarkEntry[] {
+  const root: BookmarkEntry[] = [];
+  const stack: Array<BookmarkEntry & { level: number }> = [];
+
+  headings.forEach(heading => {
+    const entry: BookmarkEntry & { level: number } = {
+      title: heading.title,
+      page: heading.page,
+      level: heading.level,
+      id: heading.id,
+      children: []
+    };
+
+    // Find parent level
+    while (stack.length > 0 && stack[stack.length - 1].level >= heading.level) {
+      stack.pop();
+    }
+
+    if (stack.length === 0) {
+      root.push(entry);
+    } else {
+      const parent = stack[stack.length - 1];
+      if (!parent.children) parent.children = [];
+      parent.children.push(entry);
+    }
+
+    stack.push(entry);
+  });
+
+  return root;
+}
+
+/**
+ * Web-safe font replacements
+ */
+export const WEB_SAFE_FONT_MAP: Record<string, string> = {
+  'Arial': 'Arial, Helvetica, sans-serif',
+  'Helvetica': 'Helvetica, Arial, sans-serif',
+  'Times New Roman': 'Times New Roman, Times, serif',
+  'Times': 'Times, Times New Roman, serif',
+  'Courier New': 'Courier New, Courier, monospace',
+  'Courier': 'Courier, Courier New, monospace',
+  'Verdana': 'Verdana, Geneva, sans-serif',
+  'Georgia': 'Georgia, serif',
+  'Palatino': 'Palatino Linotype, Book Antiqua, Palatino, serif',
+  'Garamond': 'Garamond, serif',
+  'Comic Sans MS': 'Comic Sans MS, cursive',
+  'Trebuchet MS': 'Trebuchet MS, Helvetica, sans-serif',
+  'Arial Black': 'Arial Black, Gadget, sans-serif',
+  'Impact': 'Impact, Charcoal, sans-serif',
+};
+
+/**
+ * Replace custom fonts with web-safe alternatives
+ */
+export function replaceWithWebSafeFonts(css: string): string {
+  let processedCSS = css;
+
+  Object.entries(WEB_SAFE_FONT_MAP).forEach(([custom, webSafe]) => {
+    const regex = new RegExp(`font-family:\\s*['"]?${custom}['"]?`, 'gi');
+    processedCSS = processedCSS.replace(regex, `font-family: ${webSafe}`);
+  });
+
+  return processedCSS;
+}
+
+/**
+ * Generate @font-face CSS for custom fonts
+ */
+export function generateFontFaceCSS(fonts: Array<{ family: string; src: string; weight?: number; style?: string }>): string {
+  return fonts.map(font => {
+    const weight = font.weight || 400;
+    const style = font.style || 'normal';
+
+    return `
+      @font-face {
+        font-family: '${font.family}';
+        src: url('${font.src}');
+        font-weight: ${weight};
+        font-style: ${style};
+      }
+    `;
+  }).join('\n');
 }

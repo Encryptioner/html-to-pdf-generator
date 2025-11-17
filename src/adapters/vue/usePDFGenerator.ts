@@ -5,8 +5,13 @@
  */
 
 import { ref, type Ref } from 'vue';
-import { PDFGenerator } from '../../core';
-import type { PDFGeneratorOptions, PDFGenerationResult } from '../../types';
+import { PDFGenerator, generateBatchPDF, generateBatchPDFBlob } from '../../core';
+import type {
+  PDFGeneratorOptions,
+  PDFGenerationResult,
+  PDFContentItem,
+  BatchPDFGenerationResult
+} from '../../types';
 
 export interface UsePDFGeneratorOptions extends Partial<PDFGeneratorOptions> {
   /** Filename for the generated PDF */
@@ -45,7 +50,7 @@ export interface UsePDFGeneratorReturn {
  * @example
  * ```vue
  * <script setup>
- * import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+ * import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
  *
  * const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
  *   filename: 'my-document.pdf',
@@ -160,7 +165,7 @@ export function usePDFGenerator(
  * @example
  * ```vue
  * <script setup>
- * import { usePDFGeneratorManual } from '@your-org/pdf-generator/vue';
+ * import { usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/vue';
  *
  * const { generatePDF, isGenerating, progress } = usePDFGeneratorManual({
  *   format: 'a4',
@@ -242,6 +247,152 @@ export function usePDFGeneratorManual(
   return {
     generatePDF,
     generateBlob,
+    isGenerating,
+    progress,
+    error,
+    result,
+    reset,
+  };
+}
+
+export interface UseBatchPDFGeneratorReturn {
+  /** Generate and download batch PDF */
+  generateBatchPDF: (
+    items: PDFContentItem[],
+    filename?: string
+  ) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Generate batch PDF blob without downloading (returns result with blob) */
+  generateBatchBlob: (
+    items: PDFContentItem[]
+  ) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Whether PDF is currently being generated */
+  isGenerating: Ref<boolean>;
+
+  /** Current progress (0-100) */
+  progress: Ref<number>;
+
+  /** Error if generation failed */
+  error: Ref<Error | null>;
+
+  /** Result from last successful batch generation */
+  result: Ref<BatchPDFGenerationResult | null>;
+
+  /** Reset state */
+  reset: () => void;
+}
+
+/**
+ * Vue 3 composable for batch PDF generation
+ *
+ * @example
+ * ```vue
+ * <script setup>
+ * import { useBatchPDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
+ *
+ * const { generateBatchPDF, isGenerating, progress } = useBatchPDFGenerator({
+ *   format: 'a4',
+ * });
+ *
+ * const handleExport = async () => {
+ *   const items = [
+ *     { content: document.getElementById('section1'), pageCount: 2 },
+ *     { content: '<div>Custom HTML</div>', pageCount: 1 },
+ *   ];
+ *   await generateBatchPDF(items, 'batch-report.pdf');
+ * };
+ * </script>
+ *
+ * <template>
+ *   <button @click="handleExport" :disabled="isGenerating">
+ *     {{ isGenerating ? `Generating... ${progress}%` : 'Generate Batch PDF' }}
+ *   </button>
+ * </template>
+ * ```
+ */
+export function useBatchPDFGenerator(
+  options: Partial<PDFGeneratorOptions> = {}
+): UseBatchPDFGeneratorReturn {
+  const isGenerating = ref(false);
+  const progress = ref(0);
+  const error = ref<Error | null>(null);
+  const result = ref<BatchPDFGenerationResult | null>(null);
+
+  const generateBatch = async (
+    items: PDFContentItem[],
+    filename: string = 'batch-document.pdf'
+  ): Promise<BatchPDFGenerationResult | null> => {
+    try {
+      isGenerating.value = true;
+      error.value = null;
+
+      const res = await generateBatchPDF(items, filename, {
+        ...options,
+        onProgress: (p) => {
+          progress.value = p;
+          options.onProgress?.(p);
+        },
+        onError: (e) => {
+          error.value = e;
+          options.onError?.(e);
+        },
+        onComplete: (blob) => {
+          options.onComplete?.(blob);
+        },
+      });
+      result.value = res;
+      return res;
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      error.value = err;
+      return null;
+    } finally {
+      isGenerating.value = false;
+    }
+  };
+
+  const generateBlob = async (
+    items: PDFContentItem[]
+  ): Promise<BatchPDFGenerationResult | null> => {
+    try {
+      isGenerating.value = true;
+      error.value = null;
+
+      const res = await generateBatchPDFBlob(items, {
+        ...options,
+        onProgress: (p) => {
+          progress.value = p;
+          options.onProgress?.(p);
+        },
+        onError: (e) => {
+          error.value = e;
+          options.onError?.(e);
+        },
+        onComplete: (blob) => {
+          options.onComplete?.(blob);
+        },
+      });
+      result.value = res;
+      return res;
+    } catch (e) {
+      const err = e instanceof Error ? e : new Error(String(e));
+      error.value = err;
+      return null;
+    } finally {
+      isGenerating.value = false;
+    }
+  };
+
+  const reset = () => {
+    progress.value = 0;
+    error.value = null;
+    result.value = null;
+  };
+
+  return {
+    generateBatchPDF: generateBatch,
+    generateBatchBlob: generateBlob,
     isGenerating,
     progress,
     error,

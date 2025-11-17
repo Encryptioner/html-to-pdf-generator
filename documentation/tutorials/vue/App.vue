@@ -5,7 +5,7 @@
 -->
 
 <script setup lang="ts">
-import { usePDFGenerator, usePDFGeneratorManual } from '@your-org/pdf-generator/vue';
+import { usePDFGenerator, usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/vue';
 import { ref } from 'vue';
 
 // ===== BASIC USAGE =====

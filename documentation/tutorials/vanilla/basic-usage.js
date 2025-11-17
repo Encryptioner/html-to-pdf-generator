@@ -4,7 +4,7 @@
  * This example shows how to use the PDF generator in vanilla JavaScript
  */
 
-import { generatePDF, PDFGenerator } from '@your-org/pdf-generator';
+import { generatePDF, PDFGenerator } from '@encryptioner/html-to-pdf-generator';
 
 // ===== QUICK USAGE =====
 

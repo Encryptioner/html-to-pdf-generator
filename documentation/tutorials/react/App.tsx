@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import { usePDFGenerator, usePDFGeneratorManual } from '@your-org/pdf-generator/react';
+import { usePDFGenerator, usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/react';
 
 // ===== BASIC USAGE WITH HOOK =====
 

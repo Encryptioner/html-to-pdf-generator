@@ -7,7 +7,8 @@
     "pdf-generator",
     "html-to-pdf",
     "jspdf",
-    "html2canvas",
+    "html2canvas-pro",
+    "oklch",
     "react",
     "vue",
     "svelte",
@@ -15,7 +16,11 @@
     "multi-page",
     "pagination",
     "document-generator",
-    "framework-agnostic"
+    "framework-agnostic",
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "server-side"
   ],
   "author": {
     "name": "Mir Mursalin Ankur",
@@ -33,14 +38,38 @@
   "homepage": "https://github.com/encryptioner/html-to-pdf-generator#readme",
   "packageManager": "pnpm@9.0.0",
   "type": "module",
+  "bin": {
+    "html-to-pdf-mcp": "./mcp/dist/index.js"
+  },
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "node": [
+        "./dist/node.d.ts"
+      ],
+      "react": [
+        "./dist/react.d.ts"
+      ],
+      "vue": [
+        "./dist/vue.d.ts"
+      ],
+      "svelte": [
+        "./dist/svelte.d.ts"
+      ]
+    }
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "import": "./dist/node.js",
+      "require": "./dist/node.cjs"
     },
     "./react": {
       "types": "./dist/react.d.ts",
@@ -60,30 +89,40 @@
   },
   "files": [
     "dist",
+    "mcp/dist",
+    "mcp/package.json",
+    "mcp/README.md",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "CHANGELOG.md",
+    "documentation"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "pnpm run build:lib && pnpm run build:mcp",
+    "build:lib": "tsup",
+    "build:mcp": "cd mcp && pnpm install && pnpm run build",
     "dev": "tsup --watch",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint src --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "clean": "rm -rf dist",
+    "clean": "rm -rf dist && rm -rf mcp/dist",
     "prepublishOnly": "pnpm run clean && pnpm run build && pnpm run typecheck"
   },
   "dependencies": {
-    "html2canvas": "^1.4.1",
+    "html2canvas-pro": "^1.5.8",
     "jspdf": "^2.5.2"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0",
     "react-dom": "^18.0.0 || ^19.0.0",
-    "vue": "^3.0.0",
-    "svelte": "^4.0.0 || ^5.0.0"
+    "svelte": "^4.0.0 || ^5.0.0",
+    "vue": "^3.0.0"
   },
   "peerDependenciesMeta": {
+    "puppeteer": {
+      "optional": true
+    },
     "react": {
       "optional": true
     },
@@ -98,6 +137,7 @@
     }
   },
   "devDependencies": {
+    "@types/node": "^24.10.1",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "@typescript-eslint/eslint-plugin": "^8.0.0",

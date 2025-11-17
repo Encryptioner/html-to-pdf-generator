@@ -18,6 +18,16 @@ export interface ImageProcessingOptions {
   compress?: boolean;
   /** Convert to grayscale */
   grayscale?: boolean;
+  /** DPI for print quality (72, 150, 300) */
+  dpi?: number;
+  /** Image format */
+  format?: 'jpeg' | 'png' | 'webp';
+  /** Background color for transparent images (hex or rgb) */
+  backgroundColor?: string;
+  /** Enable image interpolation (may cause blur) */
+  interpolate?: boolean;
+  /** Optimize for print quality */
+  optimizeForPrint?: boolean;
 }
 
 /**
@@ -108,6 +118,11 @@ export async function optimizeImage(
     quality = 0.85,
     compress = true,
     grayscale = false,
+    dpi = 150,
+    format = 'jpeg',
+    backgroundColor = '#ffffff',
+    interpolate = true,
+    optimizeForPrint = false,
   } = options;
 
   const canvas = document.createElement('canvas');
@@ -116,6 +131,13 @@ export async function optimizeImage(
 
   let { width, height } = img;
 
+  // Apply DPI scaling for print quality
+  let dpiScale = 1;
+  if (optimizeForPrint && dpi) {
+    // Scale based on DPI (72 DPI is web standard, 300 DPI is print standard)
+    dpiScale = dpi / 72;
+  }
+
   // Calculate scaling to fit within max dimensions
   if (width > maxWidth || height > maxHeight) {
     const ratio = Math.min(maxWidth / width, maxHeight / height);
@@ -123,15 +145,34 @@ export async function optimizeImage(
     height *= ratio;
   }
 
-  canvas.width = width;
-  canvas.height = height;
+  // Apply DPI scaling
+  const finalWidth = Math.floor(width * dpiScale);
+  const finalHeight = Math.floor(height * dpiScale);
+
+  canvas.width = finalWidth;
+  canvas.height = finalHeight;
+
+  // Control interpolation to prevent blur
+  if (!interpolate) {
+    ctx.imageSmoothingEnabled = false;
+  } else {
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+  }
+
+  // FIX: Fill canvas with background color BEFORE drawing image
+  // This prevents transparent areas from becoming black in JPEG
+  if (format === 'jpeg' || backgroundColor !== 'transparent') {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, finalWidth, finalHeight);
+  }
 
   // Draw image
-  ctx.drawImage(img, 0, 0, width, height);
+  ctx.drawImage(img, 0, 0, finalWidth, finalHeight);
 
   // Apply grayscale if requested
   if (grayscale) {
-    const imageData = ctx.getImageData(0, 0, width, height);
+    const imageData = ctx.getImageData(0, 0, finalWidth, finalHeight);
     const data = imageData.data;
 
     for (let i = 0; i < data.length; i += 4) {
@@ -144,8 +185,9 @@ export async function optimizeImage(
     ctx.putImageData(imageData, 0, 0);
   }
 
-  // Return optimized data URL
-  return canvas.toDataURL('image/jpeg', quality);
+  // Return optimized data URL with specified format
+  const mimeType = format === 'jpeg' ? 'image/jpeg' : format === 'png' ? 'image/png' : 'image/webp';
+  return canvas.toDataURL(mimeType, quality);
 }
 
 /**
@@ -231,8 +273,9 @@ export async function getImageDimensions(
  */
 export async function imageToDataURL(
   img: HTMLImageElement,
-  type: 'image/jpeg' | 'image/png' = 'image/jpeg',
-  quality: number = 0.85
+  type: 'image/jpeg' | 'image/png' | 'image/webp' = 'image/jpeg',
+  quality: number = 0.85,
+  backgroundColor: string = '#ffffff'
 ): Promise<string> {
   const canvas = document.createElement('canvas');
   canvas.width = img.naturalWidth;
@@ -240,6 +283,13 @@ export async function imageToDataURL(
 
   const ctx = canvas.getContext('2d');
   if (!ctx) throw new Error('Failed to get canvas context');
+
+  // FIX: Fill canvas with background color BEFORE drawing image
+  // This prevents transparent areas from becoming black in JPEG
+  if (type === 'image/jpeg' || backgroundColor !== 'transparent') {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   ctx.drawImage(img, 0, 0);
   return canvas.toDataURL(type, quality);
@@ -262,4 +312,71 @@ export function estimateImageSize(dataURL: string): number {
 
   // Calculate size (base64 is ~33% larger than binary)
   return Math.ceil((base64.length * 3) / 4);
+}
+
+/**
+ * Calculate pixel dimensions for given DPI
+ */
+export function calculateDPIDimensions(
+  widthInches: number,
+  heightInches: number,
+  dpi: number
+): { width: number; height: number } {
+  return {
+    width: Math.floor(widthInches * dpi),
+    height: Math.floor(heightInches * dpi)
+  };
+}
+
+/**
+ * Get recommended DPI based on use case
+ */
+export function getRecommendedDPI(useCase: 'web' | 'print' | 'high-quality-print'): number {
+  switch (useCase) {
+    case 'web':
+      return 72;
+    case 'print':
+      return 150;
+    case 'high-quality-print':
+      return 300;
+    default:
+      return 150;
+  }
+}
+
+/**
+ * Detect if image has transparency
+ */
+export function hasTransparency(img: HTMLImageElement): Promise<boolean> {
+  return new Promise((resolve) => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      resolve(false);
+      return;
+    }
+
+    ctx.drawImage(img, 0, 0);
+
+    try {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      // Check if any pixel has alpha < 255
+      for (let i = 3; i < data.length; i += 4) {
+        if (data[i] < 255) {
+          resolve(true);
+          return;
+        }
+      }
+      resolve(false);
+    } catch (error) {
+      // CORS error or other issue
+      console.warn('Could not detect transparency:', error);
+      resolve(false);
+    }
+  });
 }

@@ -1,17 +1,21 @@
-# Source files (only publish dist/)
+# This file is mostly informational since package.json "files" array controls what's published
+# The "files" array whitelists: dist/, mcp/dist/, documentation/, README.md, LICENSE.md, CHANGELOG.md
+
+# Exclude development files
 src/
 *.ts
 *.tsx
 !*.d.ts
 
-# Configuration files
+# Exclude config files
 tsconfig.json
 tsup.config.ts
 .prettierrc
 .prettierignore
 .editorconfig
+.npmrc
 
-# Development files
+# Exclude test files
 *.test.ts
 *.test.tsx
 *.spec.ts
@@ -21,41 +25,30 @@ test/
 tests/
 coverage/
 
-# Documentation (keep README.md)
+# Exclude development docs (docs/ is for internal notes, documentation/ is for users)
 docs/
-examples/
-EXAMPLE.tsx
-*.md
-!README.md
-!LICENSE.md
+CLAUDE.md
 
-# Build artifacts
+# Exclude build artifacts
 node_modules/
 .pnpm-store/
 pnpm-lock.yaml
 *.log
 *.tgz
-.DS_Store
-.env
-.env.*
 
-# Git files
+# Exclude version control
 .git/
 .gitignore
 .gitattributes
 
-# IDE files
+# Exclude IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# CI/CD
+# Exclude CI/CD
 .github/
 .gitlab-ci.yml
 .travis.yml
-
-# Other
-*.orig
-.npmrc

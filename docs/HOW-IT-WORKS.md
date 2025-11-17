@@ -93,7 +93,7 @@ while (currentY < canvasHeight) {
 
 ## Why Previous Approaches Failed
 
-### ❌ Viewport-Based Slicing (v1.x)
+### ❌ Viewport-Based Slicing (v0.1)
 ```typescript
 // Bad: Forces content into viewport chunks
 const pageHeight = window.innerHeight;
@@ -102,7 +102,7 @@ const pageHeight = window.innerHeight;
 
 **Problem:** Browser viewport != PDF page dimensions
 
-### ❌ Scale-to-Fit (v2.x)
+### ❌ Scale-to-Fit (v0.2)
 ```typescript
 // Bad: Scales everything to fit one page
 if (tooTall) { scale = 0.5; }
@@ -111,7 +111,7 @@ if (tooTall) { scale = 0.5; }
 
 **Problem:** Long bills become illegible
 
-### ✅ GoFullPage Approach (v3.0 - Current)
+### ✅ GoFullPage Approach (v0.3 - Current)
 ```typescript
 // Good: Natural rendering + smart splitting
 render naturally → capture full height → split at page boundaries

@@ -5,7 +5,7 @@
 -->
 
 <script lang="ts">
-  import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+  import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
 
   // ===== BASIC USAGE =====
 

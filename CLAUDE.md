@@ -4,20 +4,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a framework-agnostic HTML-to-PDF generator library built for NPM distribution. It converts HTML content to multi-page PDFs using a "GoFullPage" approach - capturing full content height and intelligently splitting into pages at proper boundaries.
+This is a framework-agnostic HTML-to-PDF generator library built for NPM distribution. It converts HTML content to multi-page PDFs with smart pagination and rich features.
 
-**Key Technologies:** TypeScript, jsPDF, html2canvas
+**Key Technologies:** TypeScript, jsPDF, html2canvas-pro, Puppeteer (optional)
 
 ## Build and Development Commands
 
-This project uses **pnpm** as the package manager for development.
+This project uses **pnpm** as the package manager.
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Build the library (creates dist/ folder with ESM/CJS bundles)
+# Build library + MCP server
 pnpm run build
+
+# Build only library
+pnpm run build:lib
+
+# Build only MCP server
+pnpm run build:mcp
 
 # Watch mode for development
 pnpm run dev
@@ -25,138 +31,120 @@ pnpm run dev
 # Run tests
 pnpm test
 
-# Run tests with UI
-pnpm test:ui
-
-# Type check without emitting files
+# Type check
 pnpm run typecheck
 
-# Lint TypeScript files
+# Lint
 pnpm run lint
 
 # Clean build artifacts
 pnpm run clean
 
-# Prepare for publishing (clean, build, typecheck)
+# Prepare for publishing
 pnpm run prepublishOnly
 ```
 
 ## Architecture
-
-### Core Rendering Pipeline (GoFullPage Approach)
-
-The library uses a 3-step process similar to browser screenshot extensions:
-
-1. **Natural Rendering** (core.ts:145-220)
-   - Content rendered in fixed-width (794px = A4 at 96 DPI), unlimited-height container
-   - Positioned offscreen (-9999px) to avoid viewport constraints
-   - Allows content to flow naturally without forcing page breaks
-
-2. **Full-Height Capture** (core.ts:226-247)
-   - html2canvas captures ENTIRE content height in single canvas
-   - No viewport limits - uses `element.scrollHeight` for full height
-   - Scale factor (default 2) ensures high-quality text rendering
-
-3. **Smart Page Splitting** (core.ts:253-365)
-   - Canvas sliced at exact A4 page boundaries (not arbitrary content cuts)
-   - Each page gets precise pixel height from canvas
-   - Result: clean page breaks, no blank spaces, consistent formatting
 
 ### Module Structure
 
 **Core Library (framework-agnostic) - `src/`:**
 - `src/core.ts` - PDFGenerator class, main generation logic
 - `src/types.ts` - TypeScript interfaces and type definitions
-- `src/utils.ts` - Helper functions (color conversion, page calculations, filename sanitization)
-- `src/image-handler.ts` - SVG conversion, image optimization, background image processing
-- `src/table-handler.ts` - Table pagination, header repetition, row splitting prevention
-- `src/page-break-handler.ts` - CSS page-break properties, orphan prevention
+- `src/utils.ts` - Helper functions (color conversion, page calculations, etc.)
+- `src/image-handler.ts` - Image processing (SVG conversion, optimization, DPI control)
+- `src/table-handler.ts` - Table pagination logic
+- `src/page-break-handler.ts` - CSS page-break handling
+- `src/helpers.ts` - Utility functions
+- `src/hooks.ts` - Legacy React hooks (compatibility)
 
 **Framework Adapters - `src/adapters/`:**
-- `src/adapters/react/usePDFGenerator.ts` - React hooks (ref-based and manual)
-- `src/adapters/react/index.ts` - React adapter entry point
-- `src/adapters/vue/usePDFGenerator.ts` - Vue 3 composable
-- `src/adapters/vue/index.ts` - Vue adapter entry point
-- `src/adapters/svelte/pdfGenerator.ts` - Svelte stores
-- `src/adapters/svelte/index.ts` - Svelte adapter entry point
+- `src/adapters/node/` - Node.js/Puppeteer server-side adapter
+- `src/adapters/react/` - React hooks
+- `src/adapters/vue/` - Vue 3 composables
+- `src/adapters/svelte/` - Svelte stores
 
-**Entry Points:**
-- `src/index.ts` - Main core exports (framework-agnostic)
-- `src/hooks.ts` - React hooks (compatibility, prefer adapters/react/)
+**MCP Server - `mcp/`:**
+- Model Context Protocol server for Claude Desktop integration
+- 3 tools: generate_pdf, generate_batch_pdf, generate_pdf_from_url
+- Built separately with own package.json
 
 ### Build Configuration
 
-`tsup.config.ts` creates separate bundles:
-- Core bundle (ESM + CJS)
+`tsup.config.ts` creates 5 separate bundles:
+- Core bundle (ESM + CJS) - framework-agnostic
+- Node adapter (ESM + CJS) - server-side with Puppeteer
 - React adapter (ESM + CJS)
 - Vue adapter (ESM + CJS)
 - Svelte adapter (ESM + CJS)
 
-All bundles externalize dependencies (jspdf, html2canvas, framework packages).
+All bundles externalize dependencies (jspdf, html2canvas-pro, framework packages).
 
 ## Key Implementation Details
+
+### Rendering Pipeline
+
+1. **Natural Rendering**
+   - Content rendered in fixed-width (794px = A4 at 96 DPI), unlimited-height container
+   - Positioned offscreen to avoid viewport constraints
+   - Content flows naturally without forced page breaks
+
+2. **Full-Height Capture**
+   - html2canvas-pro captures entire content height in single canvas
+   - Uses `element.scrollHeight` for full height
+   - Scale factor (default 2) for high-quality text
+
+3. **Smart Page Splitting**
+   - Canvas sliced at exact A4 page boundaries
+   - Clean page breaks, no arbitrary content cuts
 
 ### Fixed-Width Container Strategy
 
 All PDFs use 794px width (A4 at 96 DPI) regardless of device screen size. This ensures:
-- Identical output on iPhone, tablet, desktop, 4K monitor
+- Identical output across devices
 - Consistent text wrapping and layout
 - Predictable pagination
 
-### Page Dimensions
-
-```typescript
-PAPER_FORMATS = {
-  a4: { width: 210, height: 297 },      // mm
-  letter: { width: 215.9, height: 279.4 },
-  a3: { width: 297, height: 420 },
-  legal: { width: 215.9, height: 355.6 }
-}
-```
-
-Default margins: [10, 10, 10, 10] mm (top, right, bottom, left)
-
 ### Color Handling
 
-Automatically converts Tailwind CSS v4 OKLCH colors to RGB for PDF compatibility. Pre-defined mappings in `TAILWIND_COLOR_REPLACEMENTS` (utils.ts).
+Uses `html2canvas-pro` which natively supports OKLCH colors and modern CSS color functions. Fallback conversion still included for maximum compatibility.
 
 ### Image Processing
 
-Before PDF generation (core.ts:188-196):
-1. SVG elements converted to PNG images
-2. Images optimized/compressed if enabled
-3. Background images extracted and processed
-4. All images preloaded to ensure rendering
+- SVG to PNG conversion
+- DPI-based scaling (72/150/300 DPI)
+- Format selection (JPEG/PNG/WebP)
+- Transparent background handling
+- Optimization and compression
 
 ### Table Handling
 
-Tables automatically enhanced (core.ts:199-207):
 - Headers repeat on each page
 - Rows kept together (no mid-row splits)
-- Borders enforced for better PDF visibility
+- Borders enforced for PDF visibility
 - Column widths fixed for consistency
 
-## Package Structure for NPM
+## Package Structure
 
 ```
 package.json exports:
   "." → dist/index.js (core, framework-agnostic)
+  "./node" → dist/node.js (Node.js/Puppeteer adapter)
   "./react" → dist/react.js (React adapter)
   "./vue" → dist/vue.js (Vue adapter)
   "./svelte" → dist/svelte.js (Svelte adapter)
 ```
 
-**Dependencies:**
-- jspdf ^2.5.2 (bundled with package)
-- html2canvas ^1.4.1 (bundled with package)
+**Dependencies** (bundled):
+- jspdf ^2.5.2
+- html2canvas-pro ^1.5.8
 
-**Peer Dependencies (optional):**
-- react ^18.0.0 || ^19.0.0 (only needed for React adapter)
-- react-dom ^18.0.0 || ^19.0.0 (only needed for React adapter)
-- vue ^3.0.0 (only needed for Vue adapter)
-- svelte ^4.0.0 || ^5.0.0 (only needed for Svelte adapter)
-
-This approach prevents version conflicts - jspdf and html2canvas are bundled, while framework dependencies are optional peer deps.
+**Peer Dependencies** (optional):
+- puppeteer (for Node.js adapter)
+- react ^18.0.0 || ^19.0.0 (for React adapter)
+- react-dom ^18.0.0 || ^19.0.0 (for React adapter)
+- vue ^3.0.0 (for Vue adapter)
+- svelte ^4.0.0 || ^5.0.0 (for Svelte adapter)
 
 ## Common Patterns
 
@@ -171,7 +159,7 @@ This approach prevents version conflicts - jspdf and html2canvas are bundled, wh
 
 1. Create `src/adapters/{framework}/` directory
 2. Import core PDFGenerator class from `../../core`
-3. Wrap in framework-specific primitives (hooks/composables/stores)
+3. Wrap in framework-specific primitives
 4. Create index.ts export file
 5. Add to tsup.config.ts as new entry point
 6. Update package.json exports field
@@ -180,8 +168,8 @@ This approach prevents version conflicts - jspdf and html2canvas are bundled, wh
 ### Debugging PDF Issues
 
 Common issues and locations:
-- **Content cut off**: Check container height logic (src/core.ts:145-172)
-- **Blank pages**: Check canvas slicing math (src/core.ts:298-362)
+- **Content cut off**: Check container height logic (src/core.ts)
+- **Blank pages**: Check canvas slicing math (src/core.ts)
 - **Images missing**: Check image processing (src/image-handler.ts)
 - **Table breaks mid-row**: Check table handling (src/table-handler.ts)
 
@@ -196,18 +184,16 @@ When making changes:
 
 ## Performance Characteristics
 
-Typical generation time for 10-item document:
-- Render: ~500ms
-- Capture: ~1000ms
-- PDF generation: ~300ms
-- **Total: ~1.8 seconds**
+Typical generation times:
+- 1 page: ~500ms
+- 5 pages: ~2s
+- 10 pages: ~4s
 
 File size: ~400KB for typical documents (scale=2, quality=0.85)
 
 ## Dependencies
 
-- **jsPDF**: PDF document creation
-- **html2canvas**: HTML to canvas rendering
-- **React/Vue/Svelte**: Framework adapters (peer dependencies)
-
-Keep jspdf and html2canvas versions flexible to avoid conflicts with user projects.
+- **jsPDF** - PDF document creation
+- **html2canvas-pro** - HTML to canvas rendering with OKLCH support
+- **Puppeteer** (optional) - Server-side true browser rendering
+- **React/Vue/Svelte** (peer deps) - Framework adapters
