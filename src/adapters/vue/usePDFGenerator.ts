@@ -50,7 +50,7 @@ export interface UsePDFGeneratorReturn {
  * @example
  * ```vue
  * <script setup>
- * import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+ * import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
  *
  * const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
  *   filename: 'my-document.pdf',
@@ -165,7 +165,7 @@ export function usePDFGenerator(
  * @example
  * ```vue
  * <script setup>
- * import { usePDFGeneratorManual } from '@your-org/pdf-generator/vue';
+ * import { usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/vue';
  *
  * const { generatePDF, isGenerating, progress } = usePDFGeneratorManual({
  *   format: 'a4',
@@ -289,7 +289,7 @@ export interface UseBatchPDFGeneratorReturn {
  * @example
  * ```vue
  * <script setup>
- * import { useBatchPDFGenerator } from '@your-org/pdf-generator/vue';
+ * import { useBatchPDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
  *
  * const { generateBatchPDF, isGenerating, progress } = useBatchPDFGenerator({
  *   format: 'a4',

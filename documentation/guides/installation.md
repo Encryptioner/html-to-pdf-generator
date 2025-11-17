@@ -228,15 +228,6 @@ If TypeScript doesn't recognize types:
 
 If you see peer dependency warnings for frameworks you're not using, you can safely ignore them. The library only requires peer dependencies for the specific adapter you're using.
 
-## Upgrading
-
-### From v3.x to v4.x
-
-```bash
-npm install @encryptioner/html-to-pdf-generator@latest
-```
-
-See [Migration Guide](./migration.md) for breaking changes.
 
 ### Check Current Version
 

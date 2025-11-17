@@ -15,11 +15,9 @@
 import React, { useRef } from 'react';
 import {
   usePDFGenerator,
-  usePDFGeneratorManual,
   useBatchPDFGenerator,
   PDFContentItem,
-  processTemplateWithContext,
-} from '@your-org/pdf-generator/react';
+} from '@encryptioner/html-to-pdf-generator/react';
 
 // ===== 1. BATCH PDF GENERATION =====
 

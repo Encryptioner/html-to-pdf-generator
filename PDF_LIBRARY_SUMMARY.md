@@ -109,16 +109,16 @@ A complete, framework-agnostic PDF generation library that can be published to N
 **Usage:**
 ```javascript
 // Vanilla JS
-import { generatePDF } from '@your-org/pdf-generator';
+import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 
 // React
-import { usePDFGenerator } from '@your-org/pdf-generator/react';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
 
 // Vue
-import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
 
 // Svelte
-import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
 ```
 
 ### 5. Device-Independent PDF Generation ✅
@@ -175,24 +175,24 @@ Pixels (96 DPI): 190mm × 3.7795 = 718px
 
 **Vanilla JS/TypeScript:**
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 ```
 
 **React:**
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # React already in project
 ```
 
 **Vue 3:**
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Vue already in project
 ```
 
 **Svelte:**
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Svelte already in project
 ```
 
@@ -200,7 +200,7 @@ npm install @your-org/pdf-generator jspdf html2canvas
 
 ### Vanilla JS
 ```javascript
-import { generatePDF } from '@your-org/pdf-generator';
+import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 
 const element = document.getElementById('content');
 await generatePDF(element, 'document.pdf', {
@@ -211,7 +211,7 @@ await generatePDF(element, 'document.pdf', {
 
 ### React
 ```tsx
-import { usePDFGenerator } from '@your-org/pdf-generator/react';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
 
 function MyComponent() {
   const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
@@ -232,7 +232,7 @@ function MyComponent() {
 ### Vue 3
 ```vue
 <script setup>
-import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
 
 const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
   filename: 'document.pdf',
@@ -252,7 +252,7 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 ### Svelte
 ```svelte
 <script>
-  import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+  import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
 
   let targetElement;
   const { generatePDF, isGenerating, progress } = createPDFGenerator({

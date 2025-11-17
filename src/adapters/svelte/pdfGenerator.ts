@@ -47,7 +47,7 @@ export interface SveltePDFGeneratorReturn {
  * @example
  * ```svelte
  * <script>
- *   import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+ *   import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
  *
  *   let targetElement;
  *
@@ -188,7 +188,7 @@ export interface SvelteBatchPDFGeneratorReturn {
  * @example
  * ```svelte
  * <script>
- *   import { createBatchPDFGenerator } from '@your-org/pdf-generator/svelte';
+ *   import { createBatchPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
  *
  *   const {
  *     generateBatchPDF,

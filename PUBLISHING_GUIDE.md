@@ -30,7 +30,7 @@ cp package.json.example package.json
 ```
 
 **Update these fields:**
-- `name`: Your package name (e.g., `@your-org/pdf-generator`)
+- `name`: Your package name (e.g., `@encryptioner/html-to-pdf-generator`)
 - `version`: Start with `1.0.0`
 - `description`: Library description
 - `author`: Your name and email
@@ -88,24 +88,24 @@ Framework-agnostic PDF generator from HTML with multi-page support.
 
 ### For Vanilla JS/TypeScript
 \`\`\`bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 \`\`\`
 
 ### For React
 \`\`\`bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # React is already in your project
 \`\`\`
 
 ### For Vue 3
 \`\`\`bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Vue is already in your project
 \`\`\`
 
 ### For Svelte
 \`\`\`bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Svelte is already in your project
 \`\`\`
 
@@ -113,7 +113,7 @@ npm install @your-org/pdf-generator jspdf html2canvas
 
 ### Vanilla JavaScript
 \`\`\`javascript
-import { generatePDF } from '@your-org/pdf-generator';
+import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 
 const element = document.getElementById('content');
 await generatePDF(element, 'document.pdf', {
@@ -124,7 +124,7 @@ await generatePDF(element, 'document.pdf', {
 
 ### React
 \`\`\`tsx
-import { usePDFGenerator } from '@your-org/pdf-generator/react';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
 
 function MyComponent() {
   const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
@@ -145,7 +145,7 @@ function MyComponent() {
 ### Vue 3
 \`\`\`vue
 <script setup>
-import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
 
 const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
   filename: 'my-document.pdf',
@@ -165,7 +165,7 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 ### Svelte
 \`\`\`svelte
 <script>
-  import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+  import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
 
   let targetElement;
   const { generatePDF, isGenerating, progress } = createPDFGenerator({
@@ -266,10 +266,10 @@ pnpm link
 
 # In your test project
 cd /path/to/test-project
-pnpm link @your-org/pdf-generator
+pnpm link @encryptioner/html-to-pdf-generator
 
 # Import and test
-import { generatePDF } from '@your-org/pdf-generator';
+import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 ```
 
 ### 4. Test in Different Frameworks
@@ -280,19 +280,19 @@ Create test projects for each framework:
 # React test
 npx create-react-app test-react
 cd test-react
-pnpm link @your-org/pdf-generator
+pnpm link @encryptioner/html-to-pdf-generator
 # Test the React adapter
 
 # Vue test
 npm create vue@latest test-vue
 cd test-vue
-pnpm link @your-org/pdf-generator
+pnpm link @encryptioner/html-to-pdf-generator
 # Test the Vue adapter
 
 # Svelte test
 npm create vite@latest test-svelte -- --template svelte
 cd test-svelte
-pnpm link @your-org/pdf-generator
+pnpm link @encryptioner/html-to-pdf-generator
 # Test the Svelte adapter
 ```
 
@@ -346,13 +346,13 @@ npm publish --access public
 
 ```bash
 # Check on NPM
-npm view @your-org/pdf-generator
+npm view @encryptioner/html-to-pdf-generator
 
 # Install in a fresh project to test
 mkdir test-install
 cd test-install
 npm init -y
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 ```
 
 ## Continuous Integration (GitHub Actions)

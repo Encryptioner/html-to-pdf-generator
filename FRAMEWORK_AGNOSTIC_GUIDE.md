@@ -63,7 +63,7 @@ pdf-generator/
 
 ```json
 {
-  "name": "@your-org/pdf-generator",
+  "name": "@encryptioner/html-to-pdf-generator",
   "version": "1.0.0",
   "description": "Framework-agnostic PDF generator from HTML",
   "type": "module",
@@ -461,7 +461,7 @@ export default defineConfig([
 
 ### Vanilla JavaScript
 ```javascript
-import { generatePDF, PDFGenerator } from '@your-org/pdf-generator';
+import { generatePDF, PDFGenerator } from '@encryptioner/html-to-pdf-generator';
 
 // Quick usage
 const element = document.getElementById('content');
@@ -483,7 +483,7 @@ console.log(`Generated ${result.pageCount} pages`);
 
 ### React
 ```tsx
-import { usePDFGenerator } from '@your-org/pdf-generator/react';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
 
 function MyComponent() {
   const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
@@ -507,7 +507,7 @@ function MyComponent() {
 ### Vue 3
 ```vue
 <script setup>
-import { usePDFGenerator } from '@your-org/pdf-generator/vue';
+import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/vue';
 
 const {
   targetRef,
@@ -535,7 +535,7 @@ const {
 ### Svelte
 ```svelte
 <script>
-  import { createPDFGenerator } from '@your-org/pdf-generator/svelte';
+  import { createPDFGenerator } from '@encryptioner/html-to-pdf-generator/svelte';
 
   let targetElement;
 
@@ -570,24 +570,24 @@ const {
 
 ### For Vanilla JS/TypeScript Projects
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 ```
 
 ### For React Projects
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # React is already installed in your project
 ```
 
 ### For Vue Projects
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Vue is already installed in your project
 ```
 
 ### For Svelte Projects
 ```bash
-npm install @your-org/pdf-generator jspdf html2canvas
+npm install @encryptioner/html-to-pdf-generator jspdf html2canvas
 # Svelte is already in your project
 ```
 

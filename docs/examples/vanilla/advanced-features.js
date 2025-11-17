@@ -16,8 +16,7 @@ import {
   generatePDF,
   generateBatchPDF,
   PDFGenerator,
-  PAPER_FORMATS,
-} from '@your-org/pdf-generator';
+} from '@encryptioner/html-to-pdf-generator';
 
 // ===== 1. BATCH PDF GENERATION =====
 // Generate multiple content items in a single PDF with automatic scaling
@@ -153,7 +152,7 @@ async function metadataExample() {
       author: 'Engineering Team',
       subject: 'Technical Documentation',
       keywords: ['product', 'specs', 'engineering'],
-      creator: 'PDF Generator v4.0',
+      creator: 'PDF Generator v1.0.0',
       creationDate: new Date('2025-01-15'),
     },
   });
@@ -212,7 +211,7 @@ async function templateVariablesExample() {
   `;
 
   // Process template with context
-  import { processTemplateWithContext, htmlStringToElement } from '@your-org/pdf-generator';
+  import { processTemplateWithContext, htmlStringToElement } from '@encryptioner/html-to-pdf-generator';
 
   const processedHtml = processTemplateWithContext(htmlTemplate, {
     companyName: 'Acme Corp',
