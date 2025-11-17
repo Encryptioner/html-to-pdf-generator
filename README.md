@@ -236,6 +236,43 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 </button>
 ```
 
+## MCP Server (Model Context Protocol)
+
+The package includes an **MCP server** for server-side PDF generation, enabling Claude Desktop and other MCP clients to generate PDFs.
+
+### Quick Setup for Claude Desktop
+
+1. **Build the package:**
+   ```bash
+   pnpm install && pnpm run build
+   ```
+
+2. **Add to Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+   ```json
+   {
+     "mcpServers": {
+       "html-to-pdf": {
+         "command": "node",
+         "args": ["/absolute/path/to/html-to-pdf-generator/mcp/dist/index.js"]
+       }
+     }
+   }
+   ```
+
+3. **Restart Claude Desktop** and use PDF generation in your conversations:
+   ```
+   You: Generate a PDF invoice with these items and save to /tmp/invoice.pdf
+   Claude: [Uses generate_pdf tool to create PDF]
+   ```
+
+### MCP Tools Available
+
+- **`generate_pdf`** - Generate PDF from HTML with full feature support (watermarks, headers/footers, metadata)
+- **`generate_batch_pdf`** - Combine multiple HTML sections into one PDF with auto-scaling
+- **`generate_pdf_from_url`** - Convert web pages to PDF (CORS-aware)
+
+**📖 Full MCP Documentation:** See [mcp/README.md](./mcp/README.md) for complete setup, API reference, and examples.
+
 ## Advanced Usage
 
 ### Using the PDFGenerator Class
