@@ -3,7 +3,7 @@
 > A modern, framework-agnostic library for converting HTML to professional multi-page PDFs with smart pagination and rich features.
 
 [![npm version](https://img.shields.io/npm/v/@encryptioner/html-to-pdf-generator.svg)](https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE.md)
 
 ## Features
 
@@ -108,7 +108,7 @@ await generateServerPDF(htmlString, 'output.pdf', {
 });
 ```
 
-**📖 [Server-Side Guide](./SERVER_SIDE_GUIDE.md)** - Complete backend documentation
+**📖 [Server-Side Guide](./documentation/guides/server-side-guide.md)** - Complete backend documentation
 
 ### With React
 
@@ -208,56 +208,30 @@ Claude: [Uses generate_pdf_from_url tool]
 ✅ URL converted to PDF successfully!
 ```
 
-**📖 [MCP Quick Start Guide](./MCP_QUICKSTART.md)** - Get started in 5 minutes
+**📖 [MCP Quick Start Guide](./docs/MCP_QUICKSTART.md)** - Get started in 5 minutes
 **📘 [MCP Server Docs](./mcp/README.md)** - Complete MCP documentation with all 3 tools
 
 ## Documentation
 
 **📚 [Complete Documentation](./documentation/index.md)**
 
-### Getting Started
+### Guides
 - **[Installation Guide](./documentation/guides/installation.md)** - Detailed installation instructions
 - **[Quick Start Guide](./documentation/guides/getting-started.md)** - Get up and running in 5 minutes
 - **[React Guide](./documentation/guides/react-guide.md)** - React integration
 - **[Vue Guide](./documentation/guides/vue-guide.md)** - Vue 3 integration
 - **[Svelte Guide](./documentation/guides/svelte-guide.md)** - Svelte integration
 - **[Vanilla JS Guide](./documentation/guides/vanilla-guide.md)** - Plain JavaScript/TypeScript
-
-### Core Features
-- **[Multi-Page Generation](./documentation/features/multi-page.md)** - Automatic page splitting
-- **[Image Handling](./documentation/features/images.md)** - SVG conversion & optimization
-- **[Table Support](./documentation/features/tables.md)** - Smart table pagination
-- **[Page Breaks](./documentation/features/page-breaks.md)** - Control page splitting
-- **[Color Management](./documentation/features/colors.md)** - OKLCH & Tailwind support
-
-### Advanced Features
-- **[Watermarks](./documentation/advanced/watermarks.md)** - Text & image watermarks
-- **[Headers & Footers](./documentation/advanced/headers-footers.md)** - Dynamic templates
-- **[Metadata](./documentation/advanced/metadata.md)** - Document properties
-- **[Batch Generation](./documentation/advanced/batch-generation.md)** - Multiple content items
-- **[Templates](./documentation/advanced/templates.md)** - Variables, loops, conditionals
-- **[Fonts](./documentation/advanced/fonts.md)** - Custom font handling
-- **[Table of Contents](./documentation/advanced/table-of-contents.md)** - Auto-generate TOC
-- **[Bookmarks](./documentation/advanced/bookmarks.md)** - PDF navigation
-- **[Security & Encryption](./documentation/advanced/security.md)** - Password protection & permissions
-- **[Async Processing](./documentation/advanced/async-processing.md)** - Background generation with webhooks
-- **[Preview Component](./documentation/advanced/preview.md)** - Real-time PDF preview (React)
-- **[URL to PDF](./documentation/advanced/url-to-pdf.md)** - Convert web pages to PDF
-- **[Image Optimization](./documentation/advanced/image-optimization.md)** - DPI control & print quality
-
-### API Reference
-- **[Options Reference](./documentation/api/options.md)** - All configuration options
-- **[PDFGenerator Class](./documentation/api/pdf-generator.md)** - Core API
-- **[React Hooks](./documentation/api/react-hooks.md)** - React API reference
-- **[Vue Composables](./documentation/api/vue-composables.md)** - Vue API reference
-- **[Svelte Stores](./documentation/api/svelte-stores.md)** - Svelte API reference
-- **[Utilities](./documentation/api/utilities.md)** - Helper functions
-
-### Help & Resources
+- **[Server-Side Guide](./documentation/guides/server-side-guide.md)** - Node.js/Puppeteer backend usage
 - **[Best Practices](./documentation/guides/best-practices.md)** - Optimization tips
 - **[Troubleshooting](./documentation/guides/troubleshooting.md)** - Common issues & solutions
-- **[Examples](./documentation/examples/code-examples.md)** - Code samples
-- **[Use Cases](./documentation/examples/use-cases.md)** - Real-world examples
+
+### Features & API
+- **[Multi-Page Generation](./documentation/features/multi-page.md)** - Automatic page splitting
+- **[Image Optimization](./documentation/advanced/image-optimization.md)** - DPI control & print quality
+- **[Options Reference](./documentation/api/options.md)** - All configuration options
+- **[Code Examples](./documentation/examples/code-examples.md)** - Copy-paste ready samples
+- **[Production Examples](./documentation/examples/production-examples.md)** - Real-world use cases
 
 ## Key Features
 
@@ -380,7 +354,7 @@ pnpm run lint
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
+Contributions are welcome! Please open an issue or pull request on GitHub.
 
 ## License
 

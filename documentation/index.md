@@ -13,47 +13,20 @@
 - **[Vue Guide](./guides/vue-guide.md)** - Using with Vue 3 applications
 - **[Svelte Guide](./guides/svelte-guide.md)** - Using with Svelte applications
 - **[Vanilla JavaScript Guide](./guides/vanilla-guide.md)** - Using with plain JavaScript/TypeScript
+- **[Server-Side Guide](./guides/server-side-guide.md)** - Using with Node.js and Puppeteer
 
-### Core Features
+### Features & API
 - **[Multi-Page Generation](./features/multi-page.md)** - Automatic page splitting and pagination
-- **[Image Handling](./features/images.md)** - SVG conversion, optimization, and background images
-- **[Table Support](./features/tables.md)** - Smart table pagination with header repetition
-- **[Page Breaks](./features/page-breaks.md)** - Control where pages split
-- **[Color Management](./features/colors.md)** - OKLCH support and Tailwind CSS compatibility
-
-### Advanced Features
-- **[Watermarks](./advanced/watermarks.md)** - Add text or image watermarks
-- **[Headers & Footers](./advanced/headers-footers.md)** - Dynamic templates with variables
-- **[Metadata](./advanced/metadata.md)** - Set document properties
-- **[Batch Generation](./advanced/batch-generation.md)** - Combine multiple content items
-- **[Template Variables](./advanced/templates.md)** - Process templates with loops and conditionals
-- **[Font Handling](./advanced/fonts.md)** - Custom fonts and web-safe replacements
-- **[Table of Contents](./advanced/table-of-contents.md)** - Auto-generate TOC from headings
-- **[Bookmarks](./advanced/bookmarks.md)** - PDF outline for navigation
-- **[Security & Encryption](./advanced/security.md)** - Password protection and permissions
-- **[Async Processing](./advanced/async-processing.md)** - Background generation with webhooks
-- **[Preview Component](./advanced/preview.md)** - Real-time PDF preview (React)
-- **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF
 - **[Image Optimization](./advanced/image-optimization.md)** - DPI control and print quality
-
-### API Reference
-- **[PDFGenerator Class](./api/pdf-generator.md)** - Core PDF generator API
 - **[Options Reference](./api/options.md)** - Complete options documentation
-- **[React Hooks API](./api/react-hooks.md)** - React hooks reference
-- **[Vue Composables API](./api/vue-composables.md)** - Vue composables reference
-- **[Svelte Stores API](./api/svelte-stores.md)** - Svelte stores reference
-- **[Utility Functions](./api/utilities.md)** - Helper functions and utilities
 
 ### Examples
-- **[Common Use Cases](./examples/use-cases.md)** - Real-world examples (invoices, reports, catalogs)
 - **[Code Examples](./examples/code-examples.md)** - Copy-paste ready code samples
-- **[Live Demos](./examples/demos.md)** - Interactive examples
+- **[Production Examples](./examples/production-examples.md)** - Real-world use cases
 
-### Best Practices & Troubleshooting
+### Resources
 - **[Best Practices](./guides/best-practices.md)** - Optimize performance and quality
 - **[Troubleshooting](./guides/troubleshooting.md)** - Common issues and solutions
-- **[Performance Guide](./guides/performance.md)** - Optimize generation speed and file size
-- **[Migration Guide](./guides/migration.md)** - Upgrading from older versions
 
 ---
 
@@ -129,40 +102,22 @@ documentation/
 │   ├── vue-guide.md            # Vue integration
 │   ├── svelte-guide.md         # Svelte integration
 │   ├── vanilla-guide.md        # Vanilla JS integration
+│   ├── server-side-guide.md    # Node.js/Puppeteer usage
 │   ├── best-practices.md       # Optimization tips
-│   ├── troubleshooting.md      # Common issues
-│   ├── performance.md          # Performance optimization
-│   └── migration.md            # Version migration
+│   └── troubleshooting.md      # Common issues
 │
 ├── features/
-│   ├── multi-page.md           # Page splitting
-│   ├── images.md               # Image handling
-│   ├── tables.md               # Table support
-│   ├── page-breaks.md          # Page break control
-│   └── colors.md               # Color management
+│   └── multi-page.md           # Page splitting
 │
 ├── advanced/
-│   ├── watermarks.md           # Watermark feature
-│   ├── headers-footers.md      # Header/footer templates
-│   ├── metadata.md             # Document metadata
-│   ├── batch-generation.md     # Batch processing
-│   ├── templates.md            # Template system
-│   ├── fonts.md                # Font handling
-│   ├── table-of-contents.md   # TOC generation
-│   └── bookmarks.md            # PDF bookmarks
+│   └── image-optimization.md   # DPI control & print quality
 │
 ├── api/
-│   ├── pdf-generator.md        # PDFGenerator class
-│   ├── options.md              # All options
-│   ├── react-hooks.md          # React API
-│   ├── vue-composables.md      # Vue API
-│   ├── svelte-stores.md        # Svelte API
-│   └── utilities.md            # Helper functions
+│   └── options.md              # All options
 │
 └── examples/
-    ├── use-cases.md            # Real-world examples
     ├── code-examples.md        # Code samples
-    └── demos.md                # Live demos
+    └── production-examples.md  # Real-world examples
 ```
 
 ---
@@ -175,11 +130,11 @@ documentation/
 
 ## Contributing
 
-We welcome contributions! See our [Contributing Guide](../CONTRIBUTING.md) for details.
+We welcome contributions! Please open an issue or pull request on [GitHub](https://github.com/Encryptioner/html-to-pdf-generator).
 
 ## License
 
-MIT License - see [LICENSE](../LICENSE) for details.
+MIT License - see [LICENSE.md](../LICENSE.md) for details.
 
 ---
 

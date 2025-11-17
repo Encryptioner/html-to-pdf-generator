@@ -689,9 +689,11 @@ function showError(message) {
 
 ## Next Steps
 
-- **[Use Cases](./use-cases.md)** - Real-world use cases
+- **[Production Examples](./production-examples.md)** - Real-world use cases
 - **[Best Practices](../guides/best-practices.md)** - Optimization tips
-- **[API Reference](../api/options.md)** - Complete API documentation
+- **[Options Reference](../api/options.md)** - Complete options documentation
+- **[Multi-Page Documents](../features/multi-page.md)** - Automatic pagination
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
 
 ---
 

@@ -630,9 +630,10 @@ await generatePDF(element, 'doc.pdf');
 
 ## Next Steps
 
-- **[Performance Guide](./performance.md)** - Detailed performance optimization
 - **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
-- **[Examples](../examples/code-examples.md)** - Real-world examples
+- **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
+- **[Production Examples](../examples/production-examples.md)** - Real-world use cases
+- **[Options Reference](../api/options.md)** - Complete options documentation
 
 ---
 

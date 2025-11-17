@@ -81,7 +81,7 @@ Supports Svelte 4 and 5.
 The library bundles its core dependencies:
 
 - **jsPDF** (^2.5.2) - Bundled
-- **html2canvas-pro** (^1.4.4) - Bundled with OKLCH support
+- **html2canvas-pro** (^1.5.8) - Bundled with OKLCH support
 
 No peer dependencies required for vanilla JavaScript usage.
 

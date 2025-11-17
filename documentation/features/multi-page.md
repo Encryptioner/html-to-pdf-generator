@@ -259,10 +259,10 @@ await generatePDF(chart, 'chart.pdf', {
 
 ## Advanced Topics
 
-For more control over page splitting:
-- **[Page Breaks](./page-breaks.md)** - Control where pages split
-- **[Headers & Footers](../advanced/headers-footers.md)** - Custom page headers/footers
-- **[Table of Contents](../advanced/table-of-contents.md)** - Auto-generate TOC with page numbers
+For more control over multi-page PDFs:
+- **[Options Reference](../api/options.md)** - All available options for pagination control
+- **[Best Practices](../guides/best-practices.md)** - Optimize performance and quality
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
 
 ## Performance Tips
 
@@ -287,9 +287,10 @@ Times vary based on content complexity, images, and device performance.
 
 ## Next Steps
 
-- **[Images](./images.md)** - Add images to your multi-page PDFs
-- **[Tables](./tables.md)** - Create tables that span multiple pages
-- **[Page Breaks](./page-breaks.md)** - Control pagination precisely
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Options Reference](../api/options.md)** - Complete options documentation
+- **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
+- **[Best Practices](../guides/best-practices.md)** - Optimization tips
 
 ---
 

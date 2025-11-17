@@ -558,8 +558,9 @@ If you've found a bug:
 ## Next Steps
 
 - **[Best Practices](./best-practices.md)** - Optimize your PDFs
-- **[Performance Guide](./performance.md)** - Speed up generation
-- **[API Reference](../api/options.md)** - Complete options reference
+- **[Options Reference](../api/options.md)** - Complete options documentation
+- **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
+- **[Getting Started](./getting-started.md)** - Quick start guide
 
 ---
 

@@ -693,9 +693,11 @@ customElements.define('pdf-document', PDFDocument);
 
 ## Next Steps
 
-- **[Advanced Features](../advanced/watermarks.md)** - Watermarks, headers, templates
-- **[API Reference](../api/pdf-generator.md)** - Complete API documentation
-- **[Examples](../examples/code-examples.md)** - More code examples
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Options Reference](../api/options.md)** - Complete options documentation
+- **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
+- **[Production Examples](../examples/production-examples.md)** - Real-world use cases
+- **[Best Practices](./best-practices.md)** - Optimization tips
 
 ---
 

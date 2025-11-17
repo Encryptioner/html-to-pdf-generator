@@ -405,7 +405,7 @@ Watermark configuration.
 - **Type**: `WatermarkOptions`
 - **Default**: `undefined`
 
-See [Watermarks Guide](../advanced/watermarks.md).
+Add text or image watermarks to your PDFs.
 
 ```javascript
 watermark: {
@@ -424,7 +424,7 @@ Header template configuration.
 - **Type**: `HeaderFooterTemplate`
 - **Default**: `undefined`
 
-See [Headers & Footers Guide](../advanced/headers-footers.md).
+Configure custom headers with template variables.
 
 ```javascript
 headerTemplate: {
@@ -455,7 +455,7 @@ PDF document metadata.
 - **Type**: `PDFMetadata`
 - **Default**: `undefined`
 
-See [Metadata Guide](../advanced/metadata.md).
+Set document metadata including title, author, keywords, etc.
 
 ```javascript
 metadata: {
@@ -485,7 +485,7 @@ Template system configuration.
 - **Type**: `TemplateOptions`
 - **Default**: `undefined`
 
-See [Templates Guide](../advanced/templates.md).
+Process template variables with support for loops and conditionals.
 
 ```javascript
 templateOptions: {
@@ -503,7 +503,7 @@ Font handling options.
 - **Type**: `FontOptions`
 - **Default**: `undefined`
 
-See [Fonts Guide](../advanced/fonts.md).
+Configure custom fonts and web-safe fallbacks.
 
 ```javascript
 fontOptions: {
@@ -526,7 +526,7 @@ Table of contents configuration.
 - **Type**: `TOCOptions`
 - **Default**: `undefined`
 
-See [Table of Contents Guide](../advanced/table-of-contents.md).
+Auto-generate table of contents from document headings.
 
 ```javascript
 tocOptions: {
@@ -544,7 +544,7 @@ PDF bookmarks/outline configuration.
 - **Type**: `BookmarkOptions`
 - **Default**: `undefined`
 
-See [Bookmarks Guide](../advanced/bookmarks.md).
+Create PDF outline/bookmarks for easy navigation.
 
 ```javascript
 bookmarkOptions: {
