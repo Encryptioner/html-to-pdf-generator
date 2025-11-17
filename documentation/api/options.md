@@ -2,6 +2,25 @@
 
 Complete reference for all PDF generation options.
 
+## Feature Documentation Links
+
+- **[Multi-Page Generation](../advanced/multi-page.md)** - Page splitting and pagination
+- **[Image Optimization](../advanced/image-optimization.md)** - Image handling and quality
+- **[Watermarks](../advanced/watermarks.md)** - Add watermarks to PDFs
+- **[Headers & Footers](../advanced/headers-footers.md)** - Dynamic templates
+- **[Metadata](../advanced/metadata.md)** - Document properties
+- **[Batch Generation](../advanced/batch-generation.md)** - Multiple content items
+- **[Templates](../advanced/templates.md)** - Template system
+- **[Fonts](../advanced/fonts.md)** - Custom fonts
+- **[Table of Contents](../advanced/table-of-contents.md)** - Auto-generate TOC
+- **[Bookmarks](../advanced/bookmarks.md)** - PDF navigation
+- **[Security & Encryption](../advanced/security.md)** - Password protection
+- **[Async Processing](../advanced/async-processing.md)** - Background generation
+- **[Preview Component](../advanced/preview.md)** - Live preview (React)
+- **[URL to PDF](../advanced/url-to-pdf.md)** - Web page conversion
+
+---
+
 ## PDFGeneratorOptions
 
 ```typescript

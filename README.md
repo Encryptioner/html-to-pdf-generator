@@ -38,6 +38,31 @@ A modern, reusable library for generating multi-page PDFs from HTML content with
 - **Custom Break Points**: Define where pages should break
 - **Widow/Orphan Control**: Prevents lonely lines at page boundaries
 
+### 📖 Comprehensive Documentation
+
+**Core Features:**
+- [Multi-Page Generation](./documentation/advanced/multi-page.md)
+- [Image Handling](./documentation/advanced/image-optimization.md)
+- [Table Support](./documentation/features/tables.md)
+- [Page Breaks](./documentation/features/page-breaks.md)
+- [Color Management](./documentation/features/colors.md)
+
+**Advanced Features:**
+- [Watermarks](./documentation/advanced/watermarks.md)
+- [Headers & Footers](./documentation/advanced/headers-footers.md)
+- [Metadata](./documentation/advanced/metadata.md)
+- [Batch Generation](./documentation/advanced/batch-generation.md)
+- [Templates](./documentation/advanced/templates.md)
+- [Fonts](./documentation/advanced/fonts.md)
+- [Table of Contents](./documentation/advanced/table-of-contents.md)
+- [Bookmarks](./documentation/advanced/bookmarks.md)
+- [Security & Encryption](./documentation/advanced/security.md)
+- [Async Processing](./documentation/advanced/async-processing.md)
+- [Preview Component](./documentation/advanced/preview.md)
+- [URL to PDF](./documentation/advanced/url-to-pdf.md)
+
+**[📚 Full Documentation Index](./documentation/index.md)**
+
 ## Installation
 
 ```bash
@@ -331,7 +356,7 @@ const result = await generateBatchPDF(items, 'report.pdf', {
 console.log(`Generated ${result.totalPages} pages`);
 ```
 
-**📖 For detailed documentation, examples, and API reference, see [BATCH_PDF_GUIDE.md](./BATCH_PDF_GUIDE.md)**
+**📖 For detailed documentation, examples, and API reference, see [Batch Generation Guide](./documentation/advanced/batch-generation.md)**
 
 ## API Reference
 

@@ -15,9 +15,28 @@
 - **[Vanilla JavaScript Guide](./guides/vanilla-guide.md)** - Using with plain JavaScript/TypeScript
 - **[Server-Side Guide](./guides/server-side-guide.md)** - Using with Node.js and Puppeteer
 
-### Features & API
+### Core Features
 - **[Multi-Page Generation](./advanced/multi-page.md)** - Automatic page splitting and pagination
 - **[Image Optimization](./advanced/image-optimization.md)** - DPI control and print quality
+- **[Table Support](./features/tables.md)** - Smart table pagination with header repetition
+- **[Page Breaks](./features/page-breaks.md)** - Control page splitting behavior
+- **[Color Management](./features/colors.md)** - OKLCH & Tailwind CSS support
+
+### Advanced Features
+- **[Watermarks](./advanced/watermarks.md)** - Add text & image watermarks
+- **[Headers & Footers](./advanced/headers-footers.md)** - Dynamic header/footer templates
+- **[Metadata](./advanced/metadata.md)** - Set document properties
+- **[Batch Generation](./advanced/batch-generation.md)** - Combine multiple content items
+- **[Templates](./advanced/templates.md)** - Variables, loops, and conditionals
+- **[Fonts](./advanced/fonts.md)** - Custom font embedding
+- **[Table of Contents](./advanced/table-of-contents.md)** - Auto-generate TOC
+- **[Bookmarks](./advanced/bookmarks.md)** - PDF navigation structure
+- **[Security & Encryption](./advanced/security.md)** - Password protection & permissions
+- **[Async Processing](./advanced/async-processing.md)** - Background generation with webhooks
+- **[Preview Component](./advanced/preview.md)** - Real-time PDF preview (React)
+- **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF
+
+### API Reference
 - **[Options Reference](./api/options.md)** - Complete options documentation
 
 ### Examples
