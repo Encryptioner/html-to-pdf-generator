@@ -374,15 +374,30 @@ function DocumentViewer() {
 
 ### Batch PDF Generation
 
-Combine multiple HTML elements or strings into a single PDF with automatic page breaks:
+Combine multiple HTML elements or strings into a single PDF with control over page breaks:
 
 ```typescript
 import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
 
 const items = [
-  { content: document.getElementById('intro'), pageCount: 2, title: 'Introduction' },
-  { content: document.getElementById('main'), pageCount: 5, title: 'Main Content' },
-  { content: document.getElementById('summary'), pageCount: 1, title: 'Summary' },
+  {
+    content: document.getElementById('intro'),
+    pageCount: 2,
+    title: 'Introduction',
+    newPage: true  // Force on new page
+  },
+  {
+    content: document.getElementById('main'),
+    pageCount: 5,
+    title: 'Main Content',
+    newPage: true  // Force on new page
+  },
+  {
+    content: document.getElementById('summary'),
+    pageCount: 1,
+    title: 'Summary',
+    newPage: false  // Can share page with previous content
+  },
 ];
 
 const result = await generateBatchPDF(items, 'report.pdf', {
@@ -560,6 +575,7 @@ Generate and download a PDF from multiple content items.
   - `content`: HTMLElement or HTML string
   - `pageCount`: Target page count (used as layout hint)
   - `title`: Optional title for tracking
+  - `newPage`: Optional page break control (`true` = force new page, `false` = allow sharing, `undefined` = default)
 - `filename`: Output filename
 - `options`: PDF generation options
 

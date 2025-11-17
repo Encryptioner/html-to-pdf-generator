@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Batch PDF - newPage Parameter Demo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .demo-section {
+      background: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .content-box {
+      border: 2px solid #333;
+      padding: 15px;
+      margin: 10px 0;
+      background: #fafafa;
+      min-height: 200px;
+    }
+    .content-box h2 {
+      margin-top: 0;
+      color: #2563eb;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f0f9ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 4px;
+    }
+    .code-block {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      margin: 10px 0;
+    }
+    .label {
+      font-weight: bold;
+      color: #1e293b;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Batch PDF Generation - newPage Parameter Demo</h1>
+
+  <div class="demo-section">
+    <h3>Problem Statement:</h3>
+    <p><strong>Issue:</strong> When generating batch PDF with domA (1 page) and domB (1 page), both were appearing on page 1 instead of separate pages.</p>
+    <p><strong>Solution:</strong> Added <code>newPage</code> parameter to control page break behavior.</p>
+  </div>
+
+  <div class="demo-section">
+    <h3>Test Content:</h3>
+
+    <div class="content-box" id="domA">
+      <h2>DOM A - Content 1</h2>
+      <p>This is the first content section (DOM A).</p>
+      <p>It contains some text that would typically fit on one page.</p>
+      <p>In the original issue, this would appear on page 1...</p>
+      <ul>
+        <li>Item 1</li>
+        <li>Item 2</li>
+        <li>Item 3</li>
+      </ul>
+    </div>
+
+    <div class="content-box" id="domB">
+      <h2>DOM B - Content 2</h2>
+      <p>This is the second content section (DOM B).</p>
+      <p>It also contains text that fits on one page.</p>
+      <p>In the original issue, this would also appear on page 1 (sharing with DOM A).</p>
+      <ul>
+        <li>Feature A</li>
+        <li>Feature B</li>
+        <li>Feature C</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h3>Test Scenarios:</h3>
+
+    <div style="margin: 20px 0;">
+      <div class="label">Scenario 1: newPage = true (FIXES THE ISSUE)</div>
+      <div class="code-block">const items = [
+  { content: domA, pageCount: 1, newPage: true },  // domA on page 1
+  { content: domB, pageCount: 1, newPage: true }   // domB on page 2
+];
+// Expected: domA on page 1, domB on page 2 (total 2 pages)</div>
+      <button onclick="testNewPageTrue()">Test: newPage = true</button>
+      <p><strong>Expected Result:</strong> DOM A on page 1, DOM B on page 2 (2 pages total)</p>
+    </div>
+
+    <div style="margin: 20px 0;">
+      <div class="label">Scenario 2: newPage = false (Allow sharing)</div>
+      <div class="code-block">const items = [
+  { content: domA, pageCount: 1, newPage: false },
+  { content: domB, pageCount: 1, newPage: false }
+];
+// Expected: Both on page 1 if they fit (1 page total)</div>
+      <button onclick="testNewPageFalse()">Test: newPage = false</button>
+      <p><strong>Expected Result:</strong> Both DOM A and DOM B on page 1 (1 page total if they fit)</p>
+    </div>
+
+    <div style="margin: 20px 0;">
+      <div class="label">Scenario 3: newPage = undefined (Default behavior)</div>
+      <div class="code-block">const items = [
+  { content: domA, pageCount: 1 },  // no newPage specified
+  { content: domB, pageCount: 1 }   // no newPage specified
+];
+// Expected: Page break after each item (similar to newPage: true)</div>
+      <button onclick="testNewPageDefault()">Test: newPage = undefined</button>
+      <p><strong>Expected Result:</strong> Default page break behavior</p>
+    </div>
+  </div>
+
+  <div class="demo-section">
+    <h3>Test Status:</h3>
+    <div id="status" class="status">
+      Click a test button above to generate PDFs with different newPage settings.
+    </div>
+  </div>
+
+  <!-- Include the library (adjust path as needed) -->
+  <script type="module">
+    import { generateBatchPDF } from '../dist/index.js';
+
+    // Make functions available globally for onclick handlers
+    window.testNewPageTrue = async function() {
+      const status = document.getElementById('status');
+      status.innerHTML = '<strong>Testing newPage = true...</strong><br>Generating PDF...';
+
+      try {
+        const domA = document.getElementById('domA');
+        const domB = document.getElementById('domB');
+
+        const items = [
+          {
+            content: domA,
+            pageCount: 1,
+            title: 'DOM A',
+            newPage: true  // Force new page
+          },
+          {
+            content: domB,
+            pageCount: 1,
+            title: 'DOM B',
+            newPage: true  // Force new page
+          }
+        ];
+
+        const result = await generateBatchPDF(items, 'test-newpage-true.pdf', {
+          format: 'a4',
+          showPageNumbers: true,
+        });
+
+        status.innerHTML = `
+          <strong>✅ Test Completed: newPage = true</strong><br>
+          <strong>Total Pages:</strong> ${result.totalPages}<br>
+          <strong>File Size:</strong> ${(result.fileSize / 1024).toFixed(2)} KB<br>
+          <strong>Generation Time:</strong> ${result.generationTime}ms<br>
+          <strong>Items:</strong><br>
+          ${result.items.map(item =>
+            `- ${item.title || 'Untitled'}: Pages ${item.startPage}-${item.endPage} (${item.pageCount} pages)`
+          ).join('<br>')}
+          <br><br>
+          <strong>Expected:</strong> DOM A on page 1, DOM B on page 2<br>
+          <strong>Check the downloaded PDF to verify!</strong>
+        `;
+      } catch (error) {
+        status.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+      }
+    };
+
+    window.testNewPageFalse = async function() {
+      const status = document.getElementById('status');
+      status.innerHTML = '<strong>Testing newPage = false...</strong><br>Generating PDF...';
+
+      try {
+        const domA = document.getElementById('domA');
+        const domB = document.getElementById('domB');
+
+        const items = [
+          {
+            content: domA,
+            pageCount: 1,
+            title: 'DOM A',
+            newPage: false  // Allow sharing page
+          },
+          {
+            content: domB,
+            pageCount: 1,
+            title: 'DOM B',
+            newPage: false  // Allow sharing page
+          }
+        ];
+
+        const result = await generateBatchPDF(items, 'test-newpage-false.pdf', {
+          format: 'a4',
+          showPageNumbers: true,
+        });
+
+        status.innerHTML = `
+          <strong>✅ Test Completed: newPage = false</strong><br>
+          <strong>Total Pages:</strong> ${result.totalPages}<br>
+          <strong>File Size:</strong> ${(result.fileSize / 1024).toFixed(2)} KB<br>
+          <strong>Generation Time:</strong> ${result.generationTime}ms<br>
+          <strong>Items:</strong><br>
+          ${result.items.map(item =>
+            `- ${item.title || 'Untitled'}: Pages ${item.startPage}-${item.endPage} (${item.pageCount} pages)`
+          ).join('<br>')}
+          <br><br>
+          <strong>Expected:</strong> Both DOM A and DOM B on page 1 if they fit<br>
+          <strong>Check the downloaded PDF to verify!</strong>
+        `;
+      } catch (error) {
+        status.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+      }
+    };
+
+    window.testNewPageDefault = async function() {
+      const status = document.getElementById('status');
+      status.innerHTML = '<strong>Testing newPage = undefined (default)...</strong><br>Generating PDF...';
+
+      try {
+        const domA = document.getElementById('domA');
+        const domB = document.getElementById('domB');
+
+        const items = [
+          {
+            content: domA,
+            pageCount: 1,
+            title: 'DOM A',
+            // newPage not specified - uses default
+          },
+          {
+            content: domB,
+            pageCount: 1,
+            title: 'DOM B',
+            // newPage not specified - uses default
+          }
+        ];
+
+        const result = await generateBatchPDF(items, 'test-newpage-default.pdf', {
+          format: 'a4',
+          showPageNumbers: true,
+        });
+
+        status.innerHTML = `
+          <strong>✅ Test Completed: newPage = undefined</strong><br>
+          <strong>Total Pages:</strong> ${result.totalPages}<br>
+          <strong>File Size:</strong> ${(result.fileSize / 1024).toFixed(2)} KB<br>
+          <strong>Generation Time:</strong> ${result.generationTime}ms<br>
+          <strong>Items:</strong><br>
+          ${result.items.map(item =>
+            `- ${item.title || 'Untitled'}: Pages ${item.startPage}-${item.endPage} (${item.pageCount} pages)`
+          ).join('<br>')}
+          <br><br>
+          <strong>Expected:</strong> Default behavior (page break after each item)<br>
+          <strong>Check the downloaded PDF to verify!</strong>
+        `;
+      } catch (error) {
+        status.innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+      }
+    };
+
+    // Show ready message
+    document.getElementById('status').innerHTML = `
+      <strong>✅ Demo Ready!</strong><br>
+      The library has been loaded. Click any test button above to generate PDFs with different newPage settings.
+    `;
+  </script>
+</body>
+</html>
