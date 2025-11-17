@@ -93,7 +93,9 @@
     "mcp/package.json",
     "mcp/README.md",
     "README.md",
-    "LICENSE.md"
+    "LICENSE.md",
+    "CHANGELOG.md",
+    "documentation"
   ],
   "scripts": {
     "build": "pnpm run build:lib && pnpm run build:mcp",
