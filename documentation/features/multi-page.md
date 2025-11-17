@@ -287,9 +287,10 @@ Times vary based on content complexity, images, and device performance.
 
 ## Next Steps
 
-- **[Images](./images.md)** - Add images to your multi-page PDFs
-- **[Tables](./tables.md)** - Create tables that span multiple pages
-- **[Page Breaks](./page-breaks.md)** - Control pagination precisely
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Options Reference](../api/options.md)** - Complete options documentation
+- **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
+- **[Best Practices](../guides/best-practices.md)** - Optimization tips
 
 ---
 

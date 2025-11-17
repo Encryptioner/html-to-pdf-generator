@@ -235,20 +235,18 @@ await generatePDF(element, 'document.pdf', {
 
 Now that you've created your first PDF, explore more features:
 
-### Essential Features
+### Essential Guides
 - **[Multi-Page Documents](../features/multi-page.md)** - Handle long documents with automatic pagination
-- **[Images](../features/images.md)** - Add and optimize images in your PDFs
-- **[Tables](../features/tables.md)** - Create professional tables with smart pagination
-
-### Advanced Features
-- **[Watermarks](../advanced/watermarks.md)** - Add text or image watermarks
-- **[Headers & Footers](../advanced/headers-footers.md)** - Custom headers and footers
-- **[Templates](../advanced/templates.md)** - Use variables and loops in your content
+- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Options Reference](../api/options.md)** - All configuration options
+- **[Best Practices](./best-practices.md)** - Optimize performance and quality
 
 ### Framework-Specific Guides
 - **[React Guide](./react-guide.md)** - Deep dive into React integration
 - **[Vue Guide](./vue-guide.md)** - Vue 3 best practices
 - **[Svelte Guide](./svelte-guide.md)** - Svelte integration tips
+- **[Vanilla JS Guide](./vanilla-guide.md)** - Plain JavaScript/TypeScript
+- **[Server-Side Guide](./server-side-guide.md)** - Node.js/Puppeteer backend usage
 
 ## Quick Examples
 
@@ -337,4 +335,4 @@ Ensure CSS is loaded and applied before generation. For external stylesheets, th
 
 ---
 
-**Ready to dive deeper?** Check out our [framework-specific guides](#framework-specific-guides) or explore [advanced features](../advanced/watermarks.md)!
+**Ready to dive deeper?** Check out our [framework-specific guides](#framework-specific-guides) or explore [image optimization](../advanced/image-optimization.md)!
