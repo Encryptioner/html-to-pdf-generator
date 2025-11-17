@@ -268,6 +268,11 @@ class PDFMCPServer {
                 properties: {
                   html: { type: 'string', description: 'HTML content for this item' },
                   pageCount: { type: 'number', description: 'Target page count - content will be scaled to fit this number of pages' },
+                  title: { type: 'string', description: 'Optional title for this section' },
+                  newPage: {
+                    type: 'boolean',
+                    description: 'Control page breaks: true = force new page, false = allow sharing page, undefined = default (page break after each item)'
+                  },
                 },
                 required: ['html', 'pageCount'],
               },
@@ -437,6 +442,8 @@ class PDFMCPServer {
         return {
           content: dom.window.document.body,
           pageCount: item.pageCount,
+          title: item.title,
+          newPage: item.newPage,
         };
       });
 

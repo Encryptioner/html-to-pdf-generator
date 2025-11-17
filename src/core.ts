@@ -563,7 +563,10 @@ export async function generateBlobFromHTML(
  * Generate batch PDF from multiple content items
  *
  * Combines multiple HTML elements/strings into a single PDF. Each item is rendered
- * sequentially in the final document with automatic page breaks between items.
+ * sequentially in the final document. Use the `newPage` parameter to control page breaks:
+ * - newPage: true → Force item to start on a new page
+ * - newPage: false → Allow item to share page with previous content
+ * - newPage: undefined → Default behavior (page break after each item)
  *
  * Note: The pageCount property in each item is used as a hint for scaling but may
  * not be exact. The actual page count depends on content size and layout.
@@ -571,9 +574,9 @@ export async function generateBlobFromHTML(
  * @example
  * ```typescript
  * const items = [
- *   { content: document.getElementById('section1'), pageCount: 2, title: 'Introduction' },
- *   { content: '<div><h1>Chapter 2</h1><p>Content...</p></div>', pageCount: 3, title: 'Details' },
- *   { content: document.getElementById('section3'), pageCount: 1, title: 'Summary' },
+ *   { content: document.getElementById('section1'), pageCount: 2, title: 'Introduction', newPage: true },
+ *   { content: '<div><h1>Chapter 2</h1><p>Content...</p></div>', pageCount: 3, title: 'Details', newPage: true },
+ *   { content: document.getElementById('section3'), pageCount: 1, title: 'Summary', newPage: false },
  * ];
  *
  * const result = await generateBatchPDF(items, 'report.pdf', {
@@ -668,9 +671,18 @@ export async function generateBatchPDFBlob(
         tempElements.push(element);
       }
 
-      // Add page break after each item (except the last one)
-      if (i < items.length - 1) {
-        element.style.pageBreakAfter = 'always';
+      // Handle page breaks based on newPage parameter
+      if (item.newPage === true && i > 0) {
+        // Force this item to start on a new page (add page break before)
+        element.style.pageBreakBefore = 'always';
+      } else if (item.newPage === false) {
+        // Allow item to share page with previous content (no forced page break)
+        // Don't add any page break
+      } else if (item.newPage === undefined) {
+        // Default behavior: add page break after each item (except the last one)
+        if (i < items.length - 1) {
+          element.style.pageBreakAfter = 'always';
+        }
       }
 
       itemMetadata.push({ title: item.title, element });

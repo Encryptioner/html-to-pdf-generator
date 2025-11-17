@@ -8,7 +8,7 @@ The batch PDF feature allows you to combine multiple HTML elements or strings in
 
 **Key Features:**
 - Combine multiple HTML elements/strings into one PDF
-- Automatic page breaks between items
+- Control page breaks with `newPage` parameter (force new page, allow sharing, or auto)
 - Progress tracking across all items
 - Per-item metadata in results (page ranges, titles)
 - Support for both HTML elements and HTML string content
@@ -314,6 +314,10 @@ Generate and download a PDF from multiple content items.
   - `content`: HTMLElement or HTML string
   - `pageCount`: Target page count (used as layout hint, may not be exact)
   - `title`: Optional title for tracking
+  - `newPage`: Optional page break control
+    - `true`: Force item to start on a new page (adds page break before)
+    - `false`: Allow item to share page with previous content (no forced break)
+    - `undefined` (default): Add page break after each item (except last)
 - `filename`: Output filename (default: 'document.pdf')
 - `options`: PDF generation options (same as single PDF generation)
 
@@ -376,6 +380,7 @@ export interface PDFContentItem {
   content: HTMLElement | string;
   pageCount: number;
   title?: string;
+  newPage?: boolean;  // Control page break behavior
 }
 
 export interface BatchPDFGenerationResult {
@@ -391,6 +396,117 @@ export interface BatchPDFGenerationResult {
     scaleFactor: number;
   }>;
 }
+```
+
+## Controlling Page Breaks with `newPage`
+
+The `newPage` parameter gives you precise control over how content items are distributed across pages.
+
+### Force Each Item on Separate Pages
+
+Use `newPage: true` to ensure each item starts on a new page:
+
+```typescript
+const items = [
+  {
+    content: domA,
+    pageCount: 1,
+    newPage: true,  // domA starts on page 1
+  },
+  {
+    content: domB,
+    pageCount: 1,
+    newPage: true,  // domB starts on page 2 (forced new page)
+  },
+];
+
+await generateBatchPDF(items, 'separate-pages.pdf');
+// Result: domA on page 1, domB on page 2 (total 2 pages)
+```
+
+### Allow Items to Share Pages
+
+Use `newPage: false` to let items flow naturally onto the same page if they fit:
+
+```typescript
+const items = [
+  {
+    content: domA,
+    pageCount: 1,
+    newPage: false,  // domA starts normally
+  },
+  {
+    content: domB,
+    pageCount: 1,
+    newPage: false,  // domB continues on same page if there's room
+  },
+];
+
+await generateBatchPDF(items, 'shared-page.pdf');
+// Result: Both domA and domB on page 1 (if they fit, total 1 page)
+```
+
+### Default Behavior
+
+When `newPage` is not specified, each item gets a page break after it (except the last item):
+
+```typescript
+const items = [
+  {
+    content: domA,
+    pageCount: 1,
+    // newPage not specified - defaults to page break after
+  },
+  {
+    content: domB,
+    pageCount: 1,
+    // newPage not specified - defaults to page break after
+  },
+];
+
+await generateBatchPDF(items, 'default.pdf');
+// Result: Similar to newPage: true behavior
+```
+
+### Mixed Control
+
+You can mix different behaviors in the same document:
+
+```typescript
+const items = [
+  {
+    content: coverPage,
+    pageCount: 1,
+    newPage: true,  // Cover always starts on page 1
+    title: 'Cover',
+  },
+  {
+    content: tableOfContents,
+    pageCount: 1,
+    newPage: true,  // TOC on its own page
+    title: 'Table of Contents',
+  },
+  {
+    content: section1Header,
+    pageCount: 1,
+    newPage: false,  // Section header can share page
+    title: 'Section 1 Header',
+  },
+  {
+    content: section1Content,
+    pageCount: 2,
+    newPage: false,  // Content flows from header
+    title: 'Section 1 Content',
+  },
+  {
+    content: section2,
+    pageCount: 3,
+    newPage: true,  // Section 2 starts fresh page
+    title: 'Section 2',
+  },
+];
+
+await generateBatchPDF(items, 'mixed-control.pdf');
 ```
 
 ## Common Use Cases

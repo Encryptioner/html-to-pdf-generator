@@ -517,6 +517,14 @@ export interface PDFContentItem {
 
   /** Optional title for this section */
   title?: string;
+
+  /**
+   * Force this item to start on a new page
+   * - true: Item starts on a new page (adds page break before)
+   * - false: Item can share page with previous content (no forced page break)
+   * - undefined: Default behavior (adds page break after each item)
+   */
+  newPage?: boolean;
 }
 
 /**
