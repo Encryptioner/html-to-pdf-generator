@@ -651,49 +651,16 @@ Always test with:
 
 ## Limitations
 
-1. **Complex CSS**: Some advanced CSS features may not render perfectly
-2. **SVG Elements**: May require special handling
-3. **Web Fonts**: Ensure fonts are loaded before generation
-4. **Interactive Elements**: Only visual representation is captured
-
-## Future Enhancements
-
-- [ ] Custom headers and footers with HTML
-- [ ] Table of contents generation
-- [ ] Watermark support
-- [ ] Encrypted PDFs
-- [ ] Digital signatures
-- [ ] Better SVG support
-- [ ] Font embedding
-- [ ] Parallel page generation
-
-## Converting to NPM Package
-
-To convert this library into a standalone NPM package:
-
-1. Copy the `pdf-generator` folder to a new project
-2. Create `package.json`:
-
-```json
-{
-  "name": "@yourorg/pdf-generator",
-  "version": "1.0.0",
-  "description": "Modern multi-page PDF generator from HTML",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "jspdf": "^3.0.0",
-    "html2canvas": "^1.4.0"
-  }
-}
-```
-
-3. Build and publish to NPM
+**Current Limitations:**
+1. **Browser Environment Required** - Core library requires DOM and canvas APIs (use Node adapter with Puppeteer for server-side)
+2. **Complex CSS** - Some advanced CSS features may render differently than in browser
+3. **Web Fonts** - Ensure fonts are loaded before PDF generation
+4. **Interactive Elements** - Only visual representation is captured (no form inputs, videos, etc.)
+5. **Large Documents** - Very large documents (50+ pages) may take several seconds to generate
 
 ## License
 
-MIT
+MIT License - see [LICENSE.md](./LICENSE.md) for details
 
 ## Contributing
 
