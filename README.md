@@ -312,128 +312,26 @@ function DocumentViewer() {
 
 ### Batch PDF Generation
 
-Generate a single PDF from multiple content items. Each item can be an HTML element or string, and will be rendered sequentially with automatic page breaks.
-
-**Vanilla JavaScript/TypeScript:**
+Combine multiple HTML elements or strings into a single PDF with automatic page breaks:
 
 ```typescript
 import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
 
 const items = [
-  {
-    content: document.getElementById('intro'),
-    pageCount: 2,
-    title: 'Introduction'
-  },
-  {
-    content: '<div><h1>Chapter 2</h1><p>Content here...</p></div>',
-    pageCount: 3,
-    title: 'Main Content'
-  },
-  {
-    content: document.getElementById('summary'),
-    pageCount: 1,
-    title: 'Summary'
-  },
+  { content: document.getElementById('intro'), pageCount: 2, title: 'Introduction' },
+  { content: document.getElementById('main'), pageCount: 5, title: 'Main Content' },
+  { content: document.getElementById('summary'), pageCount: 1, title: 'Summary' },
 ];
 
 const result = await generateBatchPDF(items, 'report.pdf', {
   format: 'a4',
   showPageNumbers: true,
-  onProgress: (progress) => console.log(`${progress}%`),
 });
 
-console.log(`Generated ${result.totalPages} pages in ${result.generationTime}ms`);
-console.log('Item breakdown:', result.items);
+console.log(`Generated ${result.totalPages} pages`);
 ```
 
-**React Hook:**
-
-```tsx
-import { useBatchPDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
-
-function MultiSectionReport() {
-  const section1Ref = useRef(null);
-  const section2Ref = useRef(null);
-  const section3Ref = useRef(null);
-
-  const { generateBatchPDF, isGenerating, progress, result } = useBatchPDFGenerator({
-    filename: 'multi-section-report.pdf',
-    format: 'a4',
-    showPageNumbers: true,
-  });
-
-  const handleDownload = async () => {
-    const items = [
-      { content: section1Ref.current, pageCount: 2, title: 'Section 1' },
-      { content: section2Ref.current, pageCount: 3, title: 'Section 2' },
-      { content: section3Ref.current, pageCount: 1, title: 'Section 3' },
-    ];
-
-    await generateBatchPDF(items);
-  };
-
-  return (
-    <div>
-      <div ref={section1Ref}>
-        <h1>Introduction</h1>
-        <p>Section 1 content...</p>
-      </div>
-
-      <div ref={section2Ref}>
-        <h1>Main Content</h1>
-        <p>Section 2 content...</p>
-      </div>
-
-      <div ref={section3Ref}>
-        <h1>Summary</h1>
-        <p>Section 3 content...</p>
-      </div>
-
-      <button onClick={handleDownload} disabled={isGenerating}>
-        {isGenerating ? `Generating... ${progress}%` : 'Download Report'}
-      </button>
-
-      {result && (
-        <div>
-          Generated {result.totalPages} pages in {result.generationTime}ms
-        </div>
-      )}
-    </div>
-  );
-}
-```
-
-**Generate Blob for Upload:**
-
-```typescript
-import { generateBatchPDFBlob } from '@encryptioner/html-to-pdf-generator';
-
-const items = [
-  { content: element1, pageCount: 2, title: 'Part 1' },
-  { content: element2, pageCount: 3, title: 'Part 2' },
-];
-
-const result = await generateBatchPDFBlob(items, {
-  format: 'a4',
-  compress: true,
-});
-
-// Upload to server
-const formData = new FormData();
-formData.append('pdf', result.blob, 'batch-report.pdf');
-await fetch('/api/upload', { method: 'POST', body: formData });
-```
-
-**Key Features:**
-- Combines multiple HTML elements/strings into one PDF
-- Automatic page breaks between items
-- Progress tracking across all items
-- Per-item metadata in results (page ranges, titles)
-- Works with framework adapters (React, Vue, Svelte)
-- Browser environment required
-
-**Note:** The `pageCount` property is used as a hint for layout but may not be exact. Actual page count depends on content size and formatting.
+**📖 For detailed documentation, examples, and API reference, see [BATCH_PDF_GUIDE.md](./BATCH_PDF_GUIDE.md)**
 
 ## API Reference
 
