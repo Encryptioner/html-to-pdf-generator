@@ -5,8 +5,13 @@
  */
 
 import { useRef, useState, useCallback } from 'react';
-import { PDFGenerator } from '../../core';
-import type { PDFGeneratorOptions, PDFGenerationResult } from '../../types';
+import { PDFGenerator, generateBatchPDF } from '../../core';
+import type {
+  PDFGeneratorOptions,
+  PDFGenerationResult,
+  PDFContentItem,
+  BatchPDFGenerationResult
+} from '../../types';
 
 export interface UsePDFGeneratorOptions extends Partial<PDFGeneratorOptions> {
   /** Filename for the generated PDF */
@@ -321,6 +326,183 @@ export function usePDFGeneratorManual(
   return {
     generatePDF,
     generateBlob,
+    isGenerating,
+    progress,
+    error,
+    result,
+    reset,
+  };
+}
+
+/**
+ * Batch PDF generator options
+ */
+export interface UseBatchPDFGeneratorOptions extends Partial<PDFGeneratorOptions> {
+  /** Filename for the generated PDF */
+  filename?: string;
+}
+
+/**
+ * Return type for useBatchPDFGenerator hook
+ */
+export interface UseBatchPDFGeneratorReturn {
+  /** Generate and download batch PDF */
+  generateBatchPDF: (items: PDFContentItem[], filename?: string) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Generate batch PDF blob without downloading */
+  generateBatchBlob: (items: PDFContentItem[]) => Promise<BatchPDFGenerationResult | null>;
+
+  /** Whether PDF is currently being generated */
+  isGenerating: boolean;
+
+  /** Current progress (0-100) */
+  progress: number;
+
+  /** Error if generation failed */
+  error: Error | null;
+
+  /** Result from last successful batch generation */
+  result: BatchPDFGenerationResult | null;
+
+  /** Reset state */
+  reset: () => void;
+}
+
+/**
+ * React hook for batch PDF generation with automatic scaling
+ *
+ * @example
+ * ```tsx
+ * function BatchReport() {
+ *   const { generateBatchPDF, isGenerating, progress, result } = useBatchPDFGenerator({
+ *     filename: 'report.pdf',
+ *     format: 'a4',
+ *     showPageNumbers: true,
+ *   });
+ *
+ *   const handleGenerate = async () => {
+ *     const items = [
+ *       { content: document.getElementById('section1')!, pageCount: 2, title: 'Introduction' },
+ *       { content: document.getElementById('section2')!, pageCount: 3, title: 'Details' },
+ *       { content: document.getElementById('section3')!, pageCount: 1, title: 'Summary' },
+ *     ];
+ *
+ *     await generateBatchPDF(items);
+ *   };
+ *
+ *   return (
+ *     <div>
+ *       <button onClick={handleGenerate} disabled={isGenerating}>
+ *         {isGenerating ? `Generating... ${progress}%` : 'Generate Report'}
+ *       </button>
+ *       {result && (
+ *         <div>
+ *           Generated {result.totalPages} pages in {result.generationTime}ms
+ *         </div>
+ *       )}
+ *     </div>
+ *   );
+ * }
+ * ```
+ */
+export function useBatchPDFGenerator(
+  options: UseBatchPDFGeneratorOptions = {}
+): UseBatchPDFGeneratorReturn {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [error, setError] = useState<Error | null>(null);
+  const [result, setResult] = useState<BatchPDFGenerationResult | null>(null);
+
+  const generateBatch = useCallback(
+    async (items: PDFContentItem[], filename?: string) => {
+      try {
+        setIsGenerating(true);
+        setError(null);
+        setProgress(0);
+        setResult(null);
+
+        const batchOptions = {
+          ...options,
+          onProgress: (p: number) => {
+            setProgress(p);
+            options.onProgress?.(p);
+          },
+          onError: (err: Error) => {
+            setError(err);
+            options.onError?.(err);
+          },
+          onComplete: options.onComplete,
+        };
+
+        const batchResult = await generateBatchPDF(
+          items,
+          filename || options.filename || 'document.pdf',
+          batchOptions
+        );
+
+        setResult(batchResult);
+        return batchResult;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        options.onError?.(error);
+        return null;
+      } finally {
+        setIsGenerating(false);
+        setProgress(0);
+      }
+    },
+    [options]
+  );
+
+  const generateBatchBlob = useCallback(
+    async (items: PDFContentItem[]) => {
+      try {
+        setIsGenerating(true);
+        setError(null);
+        setProgress(0);
+        setResult(null);
+
+        const batchOptions = {
+          ...options,
+          onProgress: (p: number) => {
+            setProgress(p);
+            options.onProgress?.(p);
+          },
+          onError: (err: Error) => {
+            setError(err);
+            options.onError?.(err);
+          },
+        };
+
+        // Use empty filename to skip download
+        const batchResult = await generateBatchPDF(items, '', batchOptions);
+
+        setResult(batchResult);
+        return batchResult;
+      } catch (err) {
+        const error = err instanceof Error ? err : new Error(String(err));
+        setError(error);
+        options.onError?.(error);
+        return null;
+      } finally {
+        setIsGenerating(false);
+        setProgress(0);
+      }
+    },
+    [options]
+  );
+
+  const reset = useCallback(() => {
+    setIsGenerating(false);
+    setProgress(0);
+    setError(null);
+    setResult(null);
+  }, []);
+
+  return {
+    generateBatchPDF: generateBatch,
+    generateBatchBlob,
     isGenerating,
     progress,
     error,

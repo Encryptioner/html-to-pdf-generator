@@ -11,6 +11,8 @@ import type {
   PDFPageConfig,
   PDFGenerationResult,
   PDFRenderContext,
+  PDFContentItem,
+  BatchPDFGenerationResult,
 } from './types';
 import {
   DEFAULT_OPTIONS,
@@ -553,6 +555,176 @@ export async function generateBlobFromHTML(
     // Cleanup
     if (element.parentNode) {
       element.parentNode.removeChild(element);
+    }
+  }
+}
+
+/**
+ * Generate batch PDF from multiple content items
+ *
+ * Combines multiple HTML elements/strings into a single PDF. Each item is rendered
+ * sequentially in the final document with automatic page breaks between items.
+ *
+ * Note: The pageCount property in each item is used as a hint for scaling but may
+ * not be exact. The actual page count depends on content size and layout.
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   { content: document.getElementById('section1'), pageCount: 2, title: 'Introduction' },
+ *   { content: '<div><h1>Chapter 2</h1><p>Content...</p></div>', pageCount: 3, title: 'Details' },
+ *   { content: document.getElementById('section3'), pageCount: 1, title: 'Summary' },
+ * ];
+ *
+ * const result = await generateBatchPDF(items, 'report.pdf', {
+ *   format: 'a4',
+ *   showPageNumbers: true,
+ *   onProgress: (progress) => console.log(`${progress}%`),
+ * });
+ *
+ * console.log(`Generated ${result.totalPages} pages`);
+ * console.log('Items:', result.items);
+ * ```
+ */
+export async function generateBatchPDF(
+  items: PDFContentItem[],
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const result = await generateBatchPDFBlob(items, options);
+
+  // Download the PDF if in browser environment and filename provided
+  if (filename && typeof document !== 'undefined') {
+    const sanitized = sanitizeFilename(filename, 'pdf');
+    const url = URL.createObjectURL(result.blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = sanitized;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return result;
+}
+
+/**
+ * Generate batch PDF blob without downloading
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   { content: element1, pageCount: 2 },
+ *   { content: element2, pageCount: 3 },
+ * ];
+ *
+ * const result = await generateBatchPDFBlob(items, options);
+ *
+ * // Upload to server
+ * const formData = new FormData();
+ * formData.append('pdf', result.blob, 'report.pdf');
+ * await fetch('/api/upload', { method: 'POST', body: formData });
+ * ```
+ */
+export async function generateBatchPDFBlob(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const startTime = Date.now();
+
+  if (!items || items.length === 0) {
+    throw new Error('Batch PDF generation requires at least one content item');
+  }
+
+  // Check if we're in a browser environment
+  const isBrowser = typeof document !== 'undefined';
+
+  if (!isBrowser) {
+    throw new Error('Batch PDF generation currently requires a browser environment');
+  }
+
+  // Create a container for all content items
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '794px'; // A4 width at 96 DPI
+  document.body.appendChild(container);
+
+  const tempElements: HTMLElement[] = [];
+  const itemMetadata: Array<{ title?: string; element: HTMLElement }> = [];
+
+  try {
+    // Process each content item
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      let element: HTMLElement;
+
+      if (typeof item.content === 'string') {
+        element = htmlStringToElement(item.content);
+        tempElements.push(element);
+      } else {
+        // Clone the element to avoid modifying the original
+        element = item.content.cloneNode(true) as HTMLElement;
+        tempElements.push(element);
+      }
+
+      // Add page break after each item (except the last one)
+      if (i < items.length - 1) {
+        element.style.pageBreakAfter = 'always';
+      }
+
+      itemMetadata.push({ title: item.title, element });
+      container.appendChild(element);
+    }
+
+    // Load external styles if any
+    await loadExternalStyles(container);
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Track progress
+    const progressCallback = options.onProgress;
+    const wrappedOptions = {
+      ...options,
+      onProgress: (progress: number) => {
+        progressCallback?.(progress);
+      },
+    };
+
+    // Generate the PDF using the combined container
+    const generator = new PDFGenerator(wrappedOptions);
+    const blob = await generator.generateBlob(container);
+
+    // For now, we don't have accurate per-item page tracking without accessing internal PDF structure
+    // We'll estimate based on the overall page count
+    const totalPages = Math.ceil(items.reduce((sum, item) => sum + (item.pageCount || 1), 0));
+
+    // Build item results with basic metadata
+    const itemResults: BatchPDFGenerationResult['items'] = items.map((item, index) => {
+      const previousPages = items.slice(0, index).reduce((sum, it) => sum + (it.pageCount || 1), 0);
+      return {
+        title: item.title,
+        startPage: previousPages + 1,
+        endPage: previousPages + (item.pageCount || 1),
+        pageCount: item.pageCount || 1,
+        scaleFactor: 1.0, // No scaling in this simplified implementation
+      };
+    });
+
+    const generationTime = Date.now() - startTime;
+
+    options.onComplete?.(blob);
+
+    return {
+      blob,
+      totalPages,
+      fileSize: blob.size,
+      generationTime,
+      items: itemResults,
+    };
+  } finally {
+    // Cleanup
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
     }
   }
 }

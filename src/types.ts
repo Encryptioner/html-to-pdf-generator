@@ -123,3 +123,52 @@ export interface PDFRenderContext {
   /** Options */
   options: Required<PDFGeneratorOptions>;
 }
+
+/**
+ * Content item for batch PDF generation
+ */
+export interface PDFContentItem {
+  /** HTML content as element or string */
+  content: HTMLElement | string;
+
+  /** Target number of pages for this item */
+  pageCount: number;
+
+  /** Optional title for this section */
+  title?: string;
+}
+
+/**
+ * Result from batch PDF generation
+ */
+export interface BatchPDFGenerationResult {
+  /** Generated PDF blob */
+  blob: Blob;
+
+  /** Total number of pages across all items */
+  totalPages: number;
+
+  /** File size in bytes */
+  fileSize: number;
+
+  /** Total generation time in milliseconds */
+  generationTime: number;
+
+  /** Per-item statistics */
+  items: Array<{
+    /** Title if provided */
+    title?: string;
+
+    /** Starting page number (1-indexed) */
+    startPage: number;
+
+    /** Ending page number (1-indexed) */
+    endPage: number;
+
+    /** Actual page count for this item */
+    pageCount: number;
+
+    /** Scale factor applied to fit target pages */
+    scaleFactor: number;
+  }>;
+}

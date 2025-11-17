@@ -310,6 +310,131 @@ function DocumentViewer() {
 }
 ```
 
+### Batch PDF Generation
+
+Generate a single PDF from multiple content items. Each item can be an HTML element or string, and will be rendered sequentially with automatic page breaks.
+
+**Vanilla JavaScript/TypeScript:**
+
+```typescript
+import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
+
+const items = [
+  {
+    content: document.getElementById('intro'),
+    pageCount: 2,
+    title: 'Introduction'
+  },
+  {
+    content: '<div><h1>Chapter 2</h1><p>Content here...</p></div>',
+    pageCount: 3,
+    title: 'Main Content'
+  },
+  {
+    content: document.getElementById('summary'),
+    pageCount: 1,
+    title: 'Summary'
+  },
+];
+
+const result = await generateBatchPDF(items, 'report.pdf', {
+  format: 'a4',
+  showPageNumbers: true,
+  onProgress: (progress) => console.log(`${progress}%`),
+});
+
+console.log(`Generated ${result.totalPages} pages in ${result.generationTime}ms`);
+console.log('Item breakdown:', result.items);
+```
+
+**React Hook:**
+
+```tsx
+import { useBatchPDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
+
+function MultiSectionReport() {
+  const section1Ref = useRef(null);
+  const section2Ref = useRef(null);
+  const section3Ref = useRef(null);
+
+  const { generateBatchPDF, isGenerating, progress, result } = useBatchPDFGenerator({
+    filename: 'multi-section-report.pdf',
+    format: 'a4',
+    showPageNumbers: true,
+  });
+
+  const handleDownload = async () => {
+    const items = [
+      { content: section1Ref.current, pageCount: 2, title: 'Section 1' },
+      { content: section2Ref.current, pageCount: 3, title: 'Section 2' },
+      { content: section3Ref.current, pageCount: 1, title: 'Section 3' },
+    ];
+
+    await generateBatchPDF(items);
+  };
+
+  return (
+    <div>
+      <div ref={section1Ref}>
+        <h1>Introduction</h1>
+        <p>Section 1 content...</p>
+      </div>
+
+      <div ref={section2Ref}>
+        <h1>Main Content</h1>
+        <p>Section 2 content...</p>
+      </div>
+
+      <div ref={section3Ref}>
+        <h1>Summary</h1>
+        <p>Section 3 content...</p>
+      </div>
+
+      <button onClick={handleDownload} disabled={isGenerating}>
+        {isGenerating ? `Generating... ${progress}%` : 'Download Report'}
+      </button>
+
+      {result && (
+        <div>
+          Generated {result.totalPages} pages in {result.generationTime}ms
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+**Generate Blob for Upload:**
+
+```typescript
+import { generateBatchPDFBlob } from '@encryptioner/html-to-pdf-generator';
+
+const items = [
+  { content: element1, pageCount: 2, title: 'Part 1' },
+  { content: element2, pageCount: 3, title: 'Part 2' },
+];
+
+const result = await generateBatchPDFBlob(items, {
+  format: 'a4',
+  compress: true,
+});
+
+// Upload to server
+const formData = new FormData();
+formData.append('pdf', result.blob, 'batch-report.pdf');
+await fetch('/api/upload', { method: 'POST', body: formData });
+```
+
+**Key Features:**
+- Combines multiple HTML elements/strings into one PDF
+- Automatic page breaks between items
+- Progress tracking across all items
+- Per-item metadata in results (page ranges, titles)
+- Works with framework adapters (React, Vue, Svelte)
+- Browser environment required
+
+**Note:** The `pageCount` property is used as a hint for layout but may not be exact. Actual page count depends on content size and formatting.
+
 ## API Reference
 
 ### PDFGenerator Class
@@ -457,6 +582,63 @@ async function generatePDFBlob(
   options: Partial<PDFGeneratorOptions> = {}
 ): Promise<Blob>
 ```
+
+### generateBatchPDF()
+
+```typescript
+async function generateBatchPDF(
+  items: PDFContentItem[],
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult>
+```
+
+Generate and download a PDF from multiple content items.
+
+**Parameters:**
+- `items`: Array of content items, each with:
+  - `content`: HTMLElement or HTML string
+  - `pageCount`: Target page count (used as layout hint)
+  - `title`: Optional title for tracking
+- `filename`: Output filename
+- `options`: PDF generation options
+
+**Returns:** BatchPDFGenerationResult containing:
+- `blob`: The generated PDF blob
+- `totalPages`: Total number of pages
+- `fileSize`: Size in bytes
+- `generationTime`: Time taken in milliseconds
+- `items`: Per-item metadata (page ranges, titles, etc.)
+
+### generateBatchPDFBlob()
+
+```typescript
+async function generateBatchPDFBlob(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult>
+```
+
+Generate a batch PDF blob without downloading (useful for server uploads).
+
+### useBatchPDFGenerator()
+
+```typescript
+function useBatchPDFGenerator(
+  options?: UseBatchPDFGeneratorOptions
+): UseBatchPDFGeneratorReturn
+```
+
+React hook for batch PDF generation.
+
+**Returns:**
+- `generateBatchPDF(items)`: Generate and download PDF from items array
+- `generateBatchBlob(items)`: Generate blob without downloading
+- `isGenerating`: Whether PDF is being generated
+- `progress`: Current progress (0-100)
+- `error`: Error if generation failed
+- `result`: BatchPDFGenerationResult from last successful generation
+- `reset()`: Reset state
 
 ## Utilities
 
