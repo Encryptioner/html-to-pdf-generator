@@ -422,11 +422,11 @@ const generator = new ServerPDFGenerator({
 
 ## 📚 Related Documentation
 
-- **[MCP Quick Start](./MCP_QUICKSTART.md)** - Claude Desktop setup
-- **[MCP Server Docs](./mcp/README.md)** - MCP server details
-- **[MCP Tools Reference](./MCP_TOOLS_REFERENCE.md)** - Tool usage guide
-- **[Main README](./README.md)** - Package overview
-- **[API Reference](./documentation/api/options.md)** - All options
+- **[MCP Quick Start](../../docs/MCP_QUICKSTART.md)** - Claude Desktop setup
+- **[MCP Server Docs](../../mcp/README.md)** - MCP server details
+- **[MCP Tools Reference](../../docs/MCP_TOOLS_REFERENCE.md)** - Tool usage guide
+- **[Main README](../../README.md)** - Package overview
+- **[API Reference](../api/options.md)** - All options
 
 ## 🤝 Contributing
 
