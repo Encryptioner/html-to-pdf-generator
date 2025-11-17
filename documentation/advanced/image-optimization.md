@@ -350,7 +350,6 @@ For web PDFs, use 72 DPI. For print PDFs, use 300 DPI.
 
 ## Related Documentation
 
-- [Multi-Page Documents](../features/multi-page.md) - Automatic page splitting
 - [Options Reference](../api/options.md) - Complete options documentation
 - [Best Practices](../guides/best-practices.md) - Optimization tips
 - [Code Examples](../examples/code-examples.md)** - Copy-paste ready samples

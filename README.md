@@ -227,8 +227,6 @@ Claude: [Uses generate_pdf_from_url tool]
 - **[Troubleshooting](./documentation/guides/troubleshooting.md)** - Common issues & solutions
 
 ### Features & API
-- **[Multi-Page Generation](./documentation/features/multi-page.md)** - Automatic page splitting
-- **[Image Optimization](./documentation/advanced/image-optimization.md)** - DPI control & print quality
 - **[Options Reference](./documentation/api/options.md)** - All configuration options
 - **[Code Examples](./documentation/examples/code-examples.md)** - Copy-paste ready samples
 - **[Production Examples](./documentation/examples/production-examples.md)** - Real-world use cases

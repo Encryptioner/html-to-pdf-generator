@@ -16,7 +16,7 @@
 - **[Server-Side Guide](./guides/server-side-guide.md)** - Using with Node.js and Puppeteer
 
 ### Features & API
-- **[Multi-Page Generation](./features/multi-page.md)** - Automatic page splitting and pagination
+- **[Multi-Page Generation](./advanced/multi-page.md)** - Automatic page splitting and pagination
 - **[Image Optimization](./advanced/image-optimization.md)** - DPI control and print quality
 - **[Options Reference](./api/options.md)** - Complete options documentation
 
