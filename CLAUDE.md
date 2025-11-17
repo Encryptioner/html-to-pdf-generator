@@ -890,4 +890,4 @@ File size: ~400KB for typical documents (scale=2, quality=0.85)
 - **html2canvas-pro**: HTML to canvas rendering with native OKLCH support
 - **React/Vue/Svelte**: Framework adapters (peer dependencies)
 
-Note: As of v4.1.1, we use `html2canvas-pro` instead of `html2canvas` for better CSS compatibility and native OKLCH color support.
+Note: As of v0.4.1, we use `html2canvas-pro` instead of `html2canvas` for better CSS compatibility and native OKLCH color support.

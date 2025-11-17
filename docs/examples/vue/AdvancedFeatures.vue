@@ -183,7 +183,7 @@ import {
   usePDFGenerator,
   useBatchPDFGenerator,
   type PDFContentItem,
-} from '@your-org/pdf-generator/vue';
+} from '@encryptioner/html-to-pdf-generator/vue';
 
 // State
 const activeTab = ref('batch');

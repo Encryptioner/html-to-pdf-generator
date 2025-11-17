@@ -16,7 +16,7 @@
     createPDFGenerator,
     createBatchPDFGenerator,
     type PDFContentItem,
-  } from '@your-org/pdf-generator/svelte';
+  } from '@encryptioner/html-to-pdf-generator/svelte';
 
   let activeTab = 'batch';
   let currentDate = new Date().toLocaleDateString();

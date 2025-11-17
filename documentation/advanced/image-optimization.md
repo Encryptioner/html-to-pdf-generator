@@ -186,7 +186,7 @@ interface ImageProcessingOptions {
   compress?: boolean;             // Enable compression
   grayscale?: boolean;            // Convert to grayscale
 
-  // NEW in v5.1.0
+  // NEW in v0.5.0
   dpi?: number;                   // DPI control (72/150/300)
   format?: 'jpeg' | 'png' | 'webp'; // Output format
   backgroundColor?: string;        // Background color (default: '#ffffff')
@@ -324,7 +324,7 @@ if (isTransparent) {
 - Increase `quality` to 0.92 or higher
 
 ### Transparent images have black backgrounds
-- This was fixed in v5.1.0
+- This was fixed in v0.5.0
 - Ensure you're using the latest version
 - Alternatively, set `format: 'png'` to preserve transparency
 
