@@ -10,7 +10,6 @@ import type {
   PDFGeneratorOptions,
   PDFPageConfig,
   PDFGenerationResult,
-  PDFRenderContext,
   PDFContentItem,
   BatchPDFGenerationResult,
 } from './types';

@@ -4,7 +4,7 @@
  * Svelte stores for PDF generation
  */
 
-import { writable, derived, type Writable, type Readable } from 'svelte/store';
+import { writable, type Readable } from 'svelte/store';
 import { PDFGenerator, generateBatchPDF, generateBatchPDFBlob } from '../../core';
 import type {
   PDFGeneratorOptions,
