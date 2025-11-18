@@ -280,6 +280,62 @@ export class PDFGenerator {
   }
 
   /**
+   * Build encryption options for jsPDF from security configuration
+   */
+  private buildEncryptionOptions(): any {
+    const security = this.options.securityOptions;
+
+    if (!security || !security.enabled) {
+      return undefined;
+    }
+
+    const userPermissions: string[] = [];
+
+    // Map permissions to jsPDF format
+    if (security.permissions) {
+      const perms = security.permissions;
+
+      // Print permission
+      if (perms.printing && perms.printing !== 'none') {
+        userPermissions.push('print');
+      }
+
+      // Modify permission
+      if (perms.modifying) {
+        userPermissions.push('modify');
+      }
+
+      // Copy permission
+      if (perms.copying) {
+        userPermissions.push('copy');
+      }
+
+      // Annotation/forms permission
+      if (perms.annotating || perms.fillingForms) {
+        userPermissions.push('annot-forms');
+      }
+    } else {
+      // Default permissions if not specified
+      userPermissions.push('print', 'copy');
+    }
+
+    const encryption: any = {
+      userPermissions,
+    };
+
+    // Add passwords if provided
+    if (security.userPassword) {
+      encryption.userPassword = security.userPassword;
+    }
+
+    if (security.ownerPassword) {
+      encryption.ownerPassword = security.ownerPassword;
+    }
+
+    return encryption;
+  }
+
+  /**
    * Create PDF from canvas with intelligent multi-page pagination
    * Similar to GoFullPage - captures full content and splits into pages naturally
    */
@@ -289,13 +345,22 @@ export class PDFGenerator {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
 
-    // Create PDF
-    const pdf = new jsPDF({
+    // Build PDF options
+    const pdfOptions: any = {
       orientation: this.options.orientation,
       unit: 'mm',
       format: this.options.format,
       compress: this.options.compress,
-    });
+    };
+
+    // Add encryption if security is enabled
+    const encryption = this.buildEncryptionOptions();
+    if (encryption) {
+      pdfOptions.encryption = encryption;
+    }
+
+    // Create PDF
+    const pdf = new jsPDF(pdfOptions);
 
     // Apply metadata if provided
     if (this.options.metadata) {

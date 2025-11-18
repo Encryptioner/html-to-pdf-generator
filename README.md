@@ -34,6 +34,7 @@ A modern, framework-agnostic library for converting HTML content to professional
 - [Watermarks](./documentation/advanced/watermarks.md)
 - [Headers & Footers](./documentation/advanced/headers-footers.md)
 - [Metadata](./documentation/advanced/metadata.md)
+- [Security & Encryption](./documentation/advanced/security.md)
 - [Batch Generation](./documentation/advanced/batch-generation.md)
 
 ---
@@ -55,6 +56,7 @@ A modern, framework-agnostic library for converting HTML content to professional
 - ✅ **Watermarks** - Add text or image watermarks with opacity control
 - ✅ **Headers/Footers** - Dynamic templates with variables ({{pageNumber}}, {{totalPages}}, {{date}}, {{title}})
 - ✅ **PDF Metadata** - Set title, author, subject, keywords, and creation date
+- ✅ **PDF Security** - Password protection and permission controls (printing, copying, modifying)
 - ✅ **Batch generation** - Combine multiple HTML sections into one PDF
 - ✅ **Media type emulation** - Apply @media print styles automatically
 - ✅ **External CSS** - Automatic loading and processing of stylesheets
@@ -258,6 +260,31 @@ await generatePDF(element, 'document.pdf', {
 - `{{date}}` - Current date
 - `{{title}}` - Document title from metadata
 
+### PDF Security
+
+Password protect your PDFs and control permissions:
+
+```typescript
+await generatePDF(element, 'secure.pdf', {
+  securityOptions: {
+    enabled: true,
+    userPassword: 'secret123',      // Password to open PDF
+    ownerPassword: 'admin456',      // Password to change permissions
+    permissions: {
+      printing: 'highResolution',   // 'none' | 'lowResolution' | 'highResolution'
+      modifying: false,             // Disable modifications
+      copying: false,               // Disable text copying
+      annotating: false,            // Disable annotations
+      fillingForms: false           // Disable form filling
+    }
+  }
+});
+```
+
+**Note:** jsPDF uses RC4 40-bit encryption, which provides basic protection but is not suitable for highly sensitive documents. For stronger encryption, consider server-side solutions.
+
+**Full security documentation:** [documentation/advanced/security.md](./documentation/advanced/security.md)
+
 ### Batch Generation
 
 ```typescript
@@ -375,6 +402,7 @@ The package includes an **MCP server** for server-side PDF generation, enabling 
 | `headerTemplate` | `HeaderFooterTemplate` | `undefined` | Header template |
 | `footerTemplate` | `HeaderFooterTemplate` | `undefined` | Footer template |
 | `metadata` | `PDFMetadata` | `undefined` | PDF metadata |
+| `securityOptions` | `PDFSecurityOptions` | `undefined` | Security & encryption settings |
 | `emulateMediaType` | `'screen' \| 'print'` | `'screen'` | Media type to emulate |
 | `onProgress` | `(progress: number) => void` | - | Progress callback (0-100) |
 | `onComplete` | `(blob: Blob) => void` | - | Completion callback |
