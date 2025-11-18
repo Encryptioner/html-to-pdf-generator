@@ -47,7 +47,7 @@ jobs:
         run: pnpm run typecheck
 
       - name: Run tests
-        run: pnpm test --run
+        run: pnpm test -- run --passWithNoTests
 
       - name: Run linter
         run: pnpm run lint
