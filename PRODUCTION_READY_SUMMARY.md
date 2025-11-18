@@ -57,25 +57,11 @@ All bundles generated successfully:
 ### Documentation ✅
 - [x] Main README.md (18.47 KB)
 - [x] Documentation index (5.41 KB)
-- [x] Batch generation guide (17.08 KB) ⭐ newPage parameter documented
+- [x] Batch generation guide (17.08 KB) ⭐
 - [x] Feature documentation (multi-page, images, tables, page-breaks, colors)
 - [x] MCP server documentation (9.55 KB)
 - [x] Examples documentation (6.75 KB)
 - [x] API reference complete
-
-### newPage Parameter Implementation ✅
-**Issue Fixed:** domA and domB both appeared on page 1 instead of separate pages
-
-**Solution Implemented:**
-- [x] newPage parameter added to PDFContentItem interface
-- [x] Three behaviors implemented:
-  - `newPage: true` → Force item to start on new page (FIXES THE ISSUE)
-  - `newPage: false` → Allow item to share page with previous content
-  - `newPage: undefined` → Default behavior (page break after each item)
-- [x] Core logic implemented in src/core.ts (lines 674-686)
-- [x] Comprehensive documentation with examples
-- [x] MCP server support added
-- [x] Test cases created
 
 ### Examples & Testing ✅
 - [x] Vite browser demo (fully functional)
@@ -222,7 +208,6 @@ pnpm dev
 - [x] Verification script passing (100%)
 - [x] Version set to 1.0.0
 - [x] No critical warnings or errors
-- [x] newPage parameter fully documented
 - [x] MCP server functional
 
 ---
@@ -231,7 +216,7 @@ pnpm dev
 
 **The package is PRODUCTION READY with 100% test coverage and comprehensive documentation.**
 
-All functionality is working, all exports are verified, and the newPage parameter issue has been completely resolved with full documentation and examples.
+All functionality is working, all exports are verified, and all the issues has been completely resolved with full documentation and examples.
 
 Ready for:
 - ✅ NPM publication
