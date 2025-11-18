@@ -17,11 +17,24 @@ If your npm username is different, you have two options:
 - Change your npm username to `encryptioner`
 - Create an organization called `encryptioner` (requires setup at npmjs.com)
 
-### 2. Creating a Granular Access Token
+### 2. GitHub Secrets Configuration
+
+You need to configure **one secret** in your GitHub repository:
+
+**`NPM_TOKEN`** - Your NPM authentication token (required)
+- This is the only secret you need to manually create
+- Used to authenticate with NPM for publishing
+
+**`GITHUB_TOKEN`** - Automatically provided by GitHub (no setup needed)
+- GitHub creates this automatically for every workflow run
+- Used only for creating GitHub Releases
+- You don't need to create or configure this
+
+### 3. Creating a Granular Access Token
 
 NPM now uses **Granular Access Tokens** (classic tokens are deprecated). These provide better security with fine-grained permissions.
 
-**Steps to create a granular access token:**
+**Steps to create the NPM_TOKEN granular access token:**
 
 1. **Log in to npmjs.com**
    - Go to [npmjs.com](https://www.npmjs.com/) and sign in
@@ -379,6 +392,39 @@ Follow [Semantic Versioning](https://semver.org/):
 - [ ] Verify package on npmjs.com
 - [ ] Test installation: `npm install @encryptioner/html-to-pdf-generator@latest`
 
+## Security & Public Packages
+
+### Is This Workflow Safe for Public Repositories?
+
+**Yes, absolutely!** This workflow is designed for public NPM packages and is completely secure:
+
+1. **Protected Publishing**:
+   - Only repository maintainers can push tags (requires write access)
+   - External contributors cannot trigger the publish workflow
+   - Pull requests from forks cannot access secrets
+
+2. **Limited Permissions**:
+   - The workflow has minimal permissions (`contents: read`)
+   - Can only read code and create releases
+   - Cannot modify repository settings or code
+
+3. **Secret Protection**:
+   - `NPM_TOKEN` is masked in all logs
+   - Only available to workflows in your repository
+   - Cannot be accessed by external contributors
+
+4. **Standard Practice**:
+   - This is the recommended approach for public NPM packages
+   - Used by thousands of open-source projects
+   - Follows GitHub and NPM best practices
+
+### What Secrets Are Used?
+
+| Secret | Who Creates It | Purpose | Setup Required |
+|--------|----------------|---------|----------------|
+| `NPM_TOKEN` | You | Publish to NPM | ✅ Yes - follow guide above |
+| `GITHUB_TOKEN` | GitHub (automatic) | Create GitHub Releases | ❌ No - automatic |
+
 ## Troubleshooting
 
 ### Publishing Fails with Authentication Error
@@ -388,6 +434,7 @@ Follow [Semantic Versioning](https://semver.org/):
 - Verify the token has "Read and write" permissions for your package
 - Check that the token scope includes `@encryptioner/html-to-pdf-generator`
 - If using IP restrictions, ensure GitHub Actions IPs are allowed
+- **Note**: `GITHUB_TOKEN` is automatic - don't create it manually!
 
 ### First-Time Publishing a Scoped Package
 
