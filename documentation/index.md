@@ -27,14 +27,8 @@
 - **[Headers & Footers](./advanced/headers-footers.md)** - Dynamic header/footer templates
 - **[Metadata](./advanced/metadata.md)** - Set document properties
 - **[Batch Generation](./advanced/batch-generation.md)** - Combine multiple content items
-- **[Templates](./advanced/templates.md)** - Variables, loops, and conditionals
-- **[Fonts](./advanced/fonts.md)** - Custom font embedding
-- **[Table of Contents](./advanced/table-of-contents.md)** - Auto-generate TOC
-- **[Bookmarks](./advanced/bookmarks.md)** - PDF navigation structure
-- **[Security & Encryption](./advanced/security.md)** - Password protection & permissions
-- **[Async Processing](./advanced/async-processing.md)** - Background generation with webhooks
-- **[Preview Component](./advanced/preview.md)** - Real-time PDF preview (React)
-- **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF
+- **[Image Optimization](./advanced/image-optimization.md)** - DPI control & print quality
+- **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF (Server-side)
 
 ### API Reference
 - **[Options Reference](./api/options.md)** - Complete options documentation
@@ -97,14 +91,15 @@ function MyComponent() {
 ✅ **Multi-page support** with smart pagination
 ✅ **Framework adapters** for React, Vue, Svelte
 ✅ **OKLCH color support** and Tailwind CSS compatibility
-✅ **Image optimization** with SVG conversion
+✅ **Image optimization** with SVG conversion & DPI control
 ✅ **Table pagination** with header repetition
 ✅ **Watermarks** (text and image)
-✅ **Headers/Footers** with dynamic variables
-✅ **Template system** with loops and conditionals
+✅ **Headers/Footers** with dynamic template variables
+✅ **PDF Metadata** (title, author, subject, keywords)
+✅ **Media type emulation** (@media print support)
 ✅ **Full TypeScript support**
 ✅ **Progress tracking**
-✅ **Batch generation**
+✅ **Batch generation** with PDF merging
 
 ---
 
