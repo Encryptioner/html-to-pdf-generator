@@ -1,20 +1,52 @@
-# Examples - Batch PDF newPage Parameter
+# Examples - HTML to PDF Generator
 
-This directory contains test examples demonstrating the `newPage` parameter implementation for batch PDF generation.
-
-## Problem Statement
-
-**Original Issue:** When generating batch PDF with domA (1 page) and domB (1 page), both were appearing on page 1 instead of separate pages, even though the total PDF page count was 2.
-
-**Solution:** Added `newPage` parameter to `PDFContentItem` interface to control page break behavior.
+This directory contains interactive demonstrations and test examples for the `@encryptioner/html-to-pdf-generator` library.
 
 ## Available Examples
 
-### 1. Test Script (Node.js)
+### 1. Interactive Vite Demo (Recommended)
+
+**Directory:** `vite-demo/`
+
+An extensible, modular browser-based demo with a tabbed interface for testing library features.
+
+**Quick Start:**
+```bash
+cd examples/vite-demo
+pnpm install
+pnpm dev
+```
+
+Then open `http://localhost:5173` in your browser.
+
+**Current Features:**
+- 📦 **Batch PDF Generation** - Test `newPage` parameter for controlling page breaks
+
+**Coming Soon:**
+- 📄 Single PDF generation
+- 📊 Table pagination
+- 🖼️ Image handling
+- 🎨 Color support (OKLCH)
+- And more...
+
+**Why This Demo?**
+- Clean tabbed UI for testing different features
+- Real-time PDF generation with result display
+- Modular architecture - easy to add new features
+- Proper bundling with Vite (handles dependencies)
+- Comprehensive README inside vite-demo/
+
+**📖 Full Documentation:** See [vite-demo/README.md](./vite-demo/README.md) for:
+- Adding new features
+- Design patterns
+- Troubleshooting
+- Project structure
+
+### 2. Node.js Test Script
 
 **File:** `test-batch-newpage.cjs`
 
-A Node.js test script that demonstrates all test cases for the newPage parameter.
+A command-line test script demonstrating batch PDF `newPage` parameter test cases.
 
 **Run:**
 ```bash
@@ -28,32 +60,15 @@ node examples/test-batch-newpage.cjs
 - Implementation details
 - Usage examples
 
-### 2. Interactive Browser Demo
+---
 
-**File:** `batch-newpage-demo.html`
+## Feature: Batch PDF newPage Parameter
 
-An interactive HTML demo that allows you to test different newPage scenarios in the browser.
+### Problem Statement
 
-**Run:**
-```bash
-# First, build the library
-pnpm run build
+**Original Issue:** When generating batch PDF with domA (1 page) and domB (1 page), both were appearing on page 1 instead of separate pages, even though the total PDF page count was 2.
 
-# Then open in browser
-open examples/batch-newpage-demo.html
-# Or serve with a local server:
-python3 -m http.server 8000
-# Then visit: http://localhost:8000/examples/batch-newpage-demo.html
-```
-
-**Features:**
-- Visual test content (DOM A and DOM B)
-- Three interactive test scenarios:
-  1. `newPage = true` - Forces each item on separate pages
-  2. `newPage = false` - Allows items to share pages
-  3. `newPage = undefined` - Default behavior
-- Real-time PDF generation with results display
-- Shows total pages, file size, generation time, and item breakdown
+**Solution:** Added `newPage` parameter to `PDFContentItem` interface to control page break behavior using physical spacing.
 
 ## Test Scenarios
 
@@ -244,10 +259,13 @@ To verify the implementation works correctly:
    node examples/test-batch-newpage.cjs
    ```
 
-2. **Open the browser demo:**
+2. **Run the browser demo:**
    ```bash
-   open examples/batch-newpage-demo.html
+   cd examples/vite-demo
+   pnpm install
+   pnpm dev
    ```
+   Then open the shown URL and test all three scenarios.
 
 3. **Check the generated PDFs:**
    - With `newPage: true`, verify DOM A and DOM B are on separate pages
