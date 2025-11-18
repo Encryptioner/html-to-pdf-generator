@@ -27,6 +27,7 @@
 - **[Headers & Footers](./advanced/headers-footers.md)** - Dynamic header/footer templates
 - **[Metadata](./advanced/metadata.md)** - Set document properties
 - **[Security & Encryption](./advanced/security.md)** - Password protection & permissions
+- **[PDF Preview](./advanced/preview.md)** - Real-time PDF preview with live updates
 - **[Batch Generation](./advanced/batch-generation.md)** - Combine multiple content items
 - **[Image Optimization](./advanced/image-optimization.md)** - DPI control & print quality
 - **[URL to PDF](./advanced/url-to-pdf.md)** - Convert web pages to PDF (Server-side)
@@ -98,6 +99,7 @@ function MyComponent() {
 ✅ **Headers/Footers** with dynamic template variables
 ✅ **PDF Metadata** (title, author, subject, keywords)
 ✅ **PDF Security** (password protection & permissions)
+✅ **PDF Preview** (real-time preview with live updates)
 ✅ **Media type emulation** (@media print support)
 ✅ **Full TypeScript support**
 ✅ **Progress tracking**

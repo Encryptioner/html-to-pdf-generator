@@ -39,6 +39,15 @@ export class PDFGenerator {
   private pageConfig: PDFPageConfig;
   private styleElement: HTMLStyleElement | null = null;
 
+  // Preview-related properties
+  private previewContainer: HTMLElement | null = null;
+  private previewIframe: HTMLIFrameElement | null = null;
+  private previewBlobUrl: string | null = null;
+  private mutationObserver: MutationObserver | null = null;
+  private debounceTimer: number | null = null;
+  private isPreviewActive: boolean = false;
+  private previewTargetElement: HTMLElement | null = null;
+
   constructor(options: Partial<PDFGeneratorOptions> = {}) {
     // Merge with defaults
     this.options = { ...DEFAULT_OPTIONS, ...options };
@@ -880,6 +889,209 @@ export class PDFGenerator {
       options: this.options,
       pageConfig: this.pageConfig,
     };
+  }
+
+  /**
+   * Start PDF preview
+   * Generates a live preview of the PDF in a container element
+   */
+  async startPreview(element: HTMLElement): Promise<void> {
+    if (!this.options.previewOptions) {
+      throw new Error('Preview options must be configured to use preview feature');
+    }
+
+    const previewOptions = this.options.previewOptions;
+
+    // Get or create preview container
+    if (previewOptions.containerId) {
+      const container = document.getElementById(previewOptions.containerId);
+      if (!container) {
+        throw new Error(`Preview container with id "${previewOptions.containerId}" not found`);
+      }
+      this.previewContainer = container;
+    } else {
+      throw new Error('Preview container ID must be specified in previewOptions.containerId');
+    }
+
+    // Store target element
+    this.previewTargetElement = element;
+    this.isPreviewActive = true;
+
+    // Setup iframe container
+    this.setupPreviewIframe();
+
+    // Generate initial preview
+    await this.updatePreview();
+
+    // Setup live updates if enabled
+    if (previewOptions.liveUpdate) {
+      this.setupLiveUpdates(element);
+    }
+  }
+
+  /**
+   * Stop PDF preview and cleanup resources
+   */
+  stopPreview(): void {
+    this.isPreviewActive = false;
+
+    // Disconnect mutation observer
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+      this.mutationObserver = null;
+    }
+
+    // Clear debounce timer
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
+    // Revoke blob URL to free memory
+    if (this.previewBlobUrl) {
+      URL.revokeObjectURL(this.previewBlobUrl);
+      this.previewBlobUrl = null;
+    }
+
+    // Remove iframe
+    if (this.previewIframe && this.previewIframe.parentNode) {
+      this.previewIframe.parentNode.removeChild(this.previewIframe);
+      this.previewIframe = null;
+    }
+
+    this.previewContainer = null;
+    this.previewTargetElement = null;
+  }
+
+  /**
+   * Manually update the preview
+   */
+  async updatePreview(): Promise<void> {
+    if (!this.isPreviewActive || !this.previewTargetElement) {
+      return;
+    }
+
+    try {
+      // Generate PDF blob
+      const blob = await this.generatePreviewBlob(this.previewTargetElement);
+
+      // Display in iframe
+      this.displayPreview(blob);
+    } catch (error) {
+      console.error('Failed to update preview:', error);
+      this.options.onError(error as Error);
+    }
+  }
+
+  /**
+   * Setup preview iframe in container
+   */
+  private setupPreviewIframe(): void {
+    if (!this.previewContainer) {
+      return;
+    }
+
+    // Create iframe
+    this.previewIframe = document.createElement('iframe');
+    this.previewIframe.style.width = '100%';
+    this.previewIframe.style.height = '100%';
+    this.previewIframe.style.border = 'none';
+    this.previewIframe.title = 'PDF Preview';
+
+    // Clear container and add iframe
+    this.previewContainer.innerHTML = '';
+    this.previewContainer.appendChild(this.previewIframe);
+  }
+
+  /**
+   * Generate PDF blob for preview (without downloading)
+   */
+  private async generatePreviewBlob(element: HTMLElement): Promise<Blob> {
+    // Use preview-specific options if provided
+    const previewOptions = this.options.previewOptions;
+    const originalScale = this.options.scale;
+    const originalQuality = this.options.imageQuality;
+
+    // Apply preview quality/scale overrides
+    if (previewOptions?.scale !== undefined) {
+      this.options.scale = previewOptions.scale;
+    } else {
+      // Default to lower quality for faster preview
+      this.options.scale = 1;
+    }
+
+    if (previewOptions?.quality !== undefined) {
+      this.options.imageQuality = previewOptions.quality;
+    } else {
+      // Default to lower quality for faster preview
+      this.options.imageQuality = 0.7;
+    }
+
+    try {
+      // Generate blob using existing generateBlob method
+      const blob = await this.generateBlob(element);
+      return blob;
+    } finally {
+      // Restore original options
+      this.options.scale = originalScale;
+      this.options.imageQuality = originalQuality;
+    }
+  }
+
+  /**
+   * Display PDF blob in preview iframe
+   */
+  private displayPreview(blob: Blob): void {
+    if (!this.previewIframe) {
+      return;
+    }
+
+    // Revoke old blob URL
+    if (this.previewBlobUrl) {
+      URL.revokeObjectURL(this.previewBlobUrl);
+    }
+
+    // Create new blob URL
+    this.previewBlobUrl = URL.createObjectURL(blob);
+
+    // Set iframe source
+    this.previewIframe.src = this.previewBlobUrl;
+  }
+
+  /**
+   * Setup live updates using MutationObserver
+   */
+  private setupLiveUpdates(element: HTMLElement): void {
+    const previewOptions = this.options.previewOptions;
+    const debounceDelay = previewOptions?.debounce ?? 500;
+
+    // Create mutation observer
+    this.mutationObserver = new MutationObserver(() => {
+      // Clear existing timer
+      if (this.debounceTimer !== null) {
+        clearTimeout(this.debounceTimer);
+      }
+
+      // Set new timer
+      this.debounceTimer = window.setTimeout(() => {
+        this.updatePreview();
+      }, debounceDelay);
+    });
+
+    // Observe changes
+    this.mutationObserver.observe(element, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
+  /**
+   * Check if preview is currently active
+   */
+  isPreviewRunning(): boolean {
+    return this.isPreviewActive;
   }
 }
 

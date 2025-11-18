@@ -35,6 +35,7 @@ A modern, framework-agnostic library for converting HTML content to professional
 - [Headers & Footers](./documentation/advanced/headers-footers.md)
 - [Metadata](./documentation/advanced/metadata.md)
 - [Security & Encryption](./documentation/advanced/security.md)
+- [PDF Preview](./documentation/advanced/preview.md)
 - [Batch Generation](./documentation/advanced/batch-generation.md)
 
 ---
@@ -57,6 +58,7 @@ A modern, framework-agnostic library for converting HTML content to professional
 - ✅ **Headers/Footers** - Dynamic templates with variables ({{pageNumber}}, {{totalPages}}, {{date}}, {{title}})
 - ✅ **PDF Metadata** - Set title, author, subject, keywords, and creation date
 - ✅ **PDF Security** - Password protection and permission controls (printing, copying, modifying)
+- ✅ **PDF Preview** - Real-time PDF preview with live updates and debouncing
 - ✅ **Batch generation** - Combine multiple HTML sections into one PDF
 - ✅ **Media type emulation** - Apply @media print styles automatically
 - ✅ **External CSS** - Automatic loading and processing of stylesheets
@@ -284,6 +286,47 @@ await generatePDF(element, 'secure.pdf', {
 **Note:** jsPDF uses RC4 40-bit encryption, which provides basic protection but is not suitable for highly sensitive documents. For stronger encryption, consider server-side solutions.
 
 **Full security documentation:** [documentation/advanced/security.md](./documentation/advanced/security.md)
+
+### PDF Preview
+
+Display a real-time preview of your PDF with automatic updates as content changes:
+
+```typescript
+import { PDFGenerator } from '@encryptioner/html-to-pdf-generator';
+
+const generator = new PDFGenerator({
+  format: 'a4',
+  previewOptions: {
+    containerId: 'pdf-preview',   // ID of container element (required)
+    liveUpdate: true,             // Auto-update when content changes
+    debounce: 500,                // Wait 500ms after changes before updating
+    scale: 1,                     // Lower scale for faster preview
+    quality: 0.7                  // Lower quality for faster preview
+  }
+});
+
+// Start preview
+const contentElement = document.getElementById('content');
+await generator.startPreview(contentElement);
+
+// Preview automatically updates as content changes
+// Manually update if needed: await generator.updatePreview();
+
+// Stop preview and download final high-quality PDF
+generator.stopPreview();
+await generator.generatePDF(contentElement, 'final.pdf');
+```
+
+**HTML Structure:**
+```html
+<div id="content">
+  <!-- Your content to preview -->
+</div>
+
+<div id="pdf-preview" style="width: 100%; height: 600px; border: 1px solid #ccc;"></div>
+```
+
+**Full preview documentation:** [documentation/advanced/preview.md](./documentation/advanced/preview.md)
 
 ### Batch Generation
 
