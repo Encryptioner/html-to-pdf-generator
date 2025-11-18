@@ -52,7 +52,7 @@
 - ✅ **Footer Templates** - `footerTemplate` with variable substitution, custom CSS, height control - **IMPLEMENTED**
 - ✅ **Media Type Emulation** - `emulateMediaType` to apply @media print styles - **IMPLEMENTED**
 - ✅ **PDF Security** - Password protection and permission controls (`securityOptions`) - **IMPLEMENTED**
-- ✅ **PDF Preview** - Real-time PDF preview with live updates (`previewOptions`) - **NEWLY IMPLEMENTED**
+- ✅ **PDF Preview** - Real-time PDF preview with live updates (`previewOptions`) - **IMPLEMENTED**
 
 ---
 
@@ -197,7 +197,7 @@ const badOptions = {
 - ✅ Header/Footer templates with variable substitution - IMPLEMENTED
 - ✅ Media type emulation (@media print) - IMPLEMENTED
 - ✅ PDF Security (password protection & permissions) - IMPLEMENTED
-- ✅ **PDF Preview (real-time preview with live updates) - NEWLY IMPLEMENTED**
+- ✅ PDF Preview (real-time preview with live updates) - IMPLEMENTED
 
 **What Needs Attention:**
 - ❌ Advanced document features (TOC, bookmarks)

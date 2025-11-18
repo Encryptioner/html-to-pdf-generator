@@ -487,7 +487,6 @@ MIT License - see [LICENSE.md](./LICENSE.md) for details.
 ## 🐛 Issues & Support
 
 - **Issues**: [GitHub Issues](https://github.com/Encryptioner/html-to-pdf-generator/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Encryptioner/html-to-pdf-generator/discussions)
 - **Email**: mir.ankur.ruet13@gmail.com
 
 ---
