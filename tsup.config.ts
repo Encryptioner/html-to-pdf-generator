@@ -3,6 +3,7 @@
  *
  * This configuration creates separate bundles for:
  * - Core library (framework-agnostic)
+ * - Node.js adapter (server-side with Puppeteer)
  * - React adapter
  * - Vue adapter
  * - Svelte adapter
@@ -19,12 +20,28 @@ export default defineConfig([
     format: ['esm', 'cjs'],
     dts: true,
     clean: true,
-    external: ['jspdf', 'html2canvas'],
+    external: ['jspdf', 'html2canvas-pro'],
     treeshake: true,
     splitting: false,
     sourcemap: true,
     minify: false,
     outDir: 'dist',
+  },
+
+  // Node.js adapter (server-side with Puppeteer)
+  {
+    entry: {
+      node: 'src/adapters/node/index.ts',
+    },
+    format: ['esm', 'cjs'],
+    dts: true,
+    external: ['puppeteer', 'jspdf', 'html2canvas-pro'],
+    treeshake: true,
+    splitting: false,
+    sourcemap: true,
+    minify: false,
+    outDir: 'dist',
+    platform: 'node',
   },
 
   // React adapter
@@ -34,7 +51,7 @@ export default defineConfig([
     },
     format: ['esm', 'cjs'],
     dts: true,
-    external: ['react', 'react-dom', 'jspdf', 'html2canvas'],
+    external: ['react', 'react-dom', 'jspdf', 'html2canvas-pro'],
     treeshake: true,
     splitting: false,
     sourcemap: true,
@@ -49,7 +66,7 @@ export default defineConfig([
     },
     format: ['esm', 'cjs'],
     dts: true,
-    external: ['vue', 'jspdf', 'html2canvas'],
+    external: ['vue', 'jspdf', 'html2canvas-pro'],
     treeshake: true,
     splitting: false,
     sourcemap: true,
@@ -64,7 +81,7 @@ export default defineConfig([
     },
     format: ['esm', 'cjs'],
     dts: true,
-    external: ['svelte', 'svelte/store', 'jspdf', 'html2canvas'],
+    external: ['svelte', 'svelte/store', 'jspdf', 'html2canvas-pro'],
     treeshake: true,
     splitting: false,
     sourcemap: true,

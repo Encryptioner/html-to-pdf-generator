@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HTML to PDF Generator - Interactive Demo</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>📄 HTML to PDF Generator</h1>
+      <p class="subtitle">Interactive Feature Demonstrations</p>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tabs">
+      <button class="tab-button active" data-tab="batch-pdf">
+        📦 Batch PDF Generation
+      </button>
+      <!-- Future tabs -->
+      <!-- <button class="tab-button" data-tab="single-pdf">📄 Single PDF</button> -->
+      <!-- <button class="tab-button" data-tab="tables">📊 Tables</button> -->
+      <!-- <button class="tab-button" data-tab="images">🖼️ Images</button> -->
+      <!-- <button class="tab-button" data-tab="colors">🎨 Colors</button> -->
+    </nav>
+
+    <!-- Tab Content -->
+    <main class="tab-content">
+      <!-- Batch PDF Tab -->
+      <section id="batch-pdf" class="tab-panel active">
+        <div class="feature-header">
+          <h2>Batch PDF Generation with newPage Parameter</h2>
+          <p class="description">
+            <strong>Issue Fixed:</strong> When generating batch PDF with domA (1 page) and domB (1 page),
+            both were appearing on page 1 instead of separate pages.
+            <br><br>
+            <strong>Solution:</strong> Added <code>newPage</code> parameter to control page break behavior
+            using physical spacing instead of CSS hints.
+          </p>
+        </div>
+
+        <div class="demo-grid">
+          <!-- Test Content -->
+          <div class="demo-section">
+            <h3>Test Content</h3>
+
+            <div class="content-box" id="domA">
+              <h2>DOM A - Content 1</h2>
+              <p>This is the first content section (DOM A).</p>
+              <p>It contains some text that would typically fit on one page.</p>
+              <p>In the original issue, this would appear on page 1...</p>
+              <ul>
+                <li>Item 1</li>
+                <li>Item 2</li>
+                <li>Item 3</li>
+              </ul>
+            </div>
+
+            <div class="content-box" id="domB">
+              <h2>DOM B - Content 2</h2>
+              <p>This is the second content section (DOM B).</p>
+              <p>It also contains text that fits on one page.</p>
+              <p>In the original issue, this would also appear on page 1 (sharing with DOM A).</p>
+              <ul>
+                <li>Feature A</li>
+                <li>Feature B</li>
+                <li>Feature C</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Test Scenarios -->
+          <div class="demo-section">
+            <h3>Test Scenarios</h3>
+
+            <div class="scenario">
+              <h4>Scenario 1: newPage = true (FIXES THE ISSUE)</h4>
+              <div class="code-block">const items = [
+  { content: domA, pageCount: 1, newPage: true },  // domA on page 1
+  { content: domB, pageCount: 1, newPage: true }   // domB on page 2
+];
+// Expected: domA on page 1, domB on page 2 (total 2 pages)</div>
+              <button class="btn btn-primary" id="btnTestTrue">
+                Test: newPage = true
+              </button>
+              <p class="expected"><strong>Expected:</strong> DOM A on page 1, DOM B on page 2 (2 pages total)</p>
+            </div>
+
+            <div class="scenario">
+              <h4>Scenario 2: newPage = false (Allow sharing)</h4>
+              <div class="code-block">const items = [
+  { content: domA, pageCount: 1, newPage: false },
+  { content: domB, pageCount: 1, newPage: false }
+];
+// Expected: Both on page 1 if they fit (1 page total)</div>
+              <button class="btn btn-secondary" id="btnTestFalse">
+                Test: newPage = false
+              </button>
+              <p class="expected"><strong>Expected:</strong> Both DOM A and DOM B on page 1 if they fit</p>
+            </div>
+
+            <div class="scenario">
+              <h4>Scenario 3: newPage = undefined (Default)</h4>
+              <div class="code-block">const items = [
+  { content: domA, pageCount: 1 },  // no newPage specified
+  { content: domB, pageCount: 1 }   // no newPage specified
+];
+// Expected: Page break after each item (similar to newPage: true)</div>
+              <button class="btn btn-info" id="btnTestDefault">
+                Test: newPage = undefined
+              </button>
+              <p class="expected"><strong>Expected:</strong> Default page break behavior</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Display -->
+        <div class="status-section">
+          <h3>Test Status</h3>
+          <div id="status" class="status">
+            Click a test button above to generate PDFs with different newPage settings.
+          </div>
+        </div>
+      </section>
+
+      <!-- Future Tab Panels -->
+      <!-- <section id="single-pdf" class="tab-panel">...</section> -->
+      <!-- <section id="tables" class="tab-panel">...</section> -->
+      <!-- <section id="images" class="tab-panel">...</section> -->
+      <!-- <section id="colors" class="tab-panel">...</section> -->
+    </main>
+
+    <footer class="footer">
+      <p>
+        📖 <a href="https://github.com/encryptioner/html-to-pdf-generator" target="_blank">Documentation</a> |
+        🐛 <a href="https://github.com/encryptioner/html-to-pdf-generator/issues" target="_blank">Report Issues</a> |
+        📦 <a href="https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator" target="_blank">NPM Package</a>
+      </p>
+    </footer>
+  </div>
+
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

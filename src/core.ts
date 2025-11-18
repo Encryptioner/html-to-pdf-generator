@@ -5,12 +5,14 @@
  */
 
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 import type {
   PDFGeneratorOptions,
   PDFPageConfig,
   PDFGenerationResult,
   PDFRenderContext,
+  PDFContentItem,
+  BatchPDFGenerationResult,
 } from './types';
 import {
   DEFAULT_OPTIONS,
@@ -553,6 +555,330 @@ export async function generateBlobFromHTML(
     // Cleanup
     if (element.parentNode) {
       element.parentNode.removeChild(element);
+    }
+  }
+}
+
+/**
+ * Generate batch PDF from multiple content items
+ *
+ * Combines multiple HTML elements/strings into a single PDF. Each item is rendered
+ * sequentially in the final document. Use the `newPage` parameter to control page breaks:
+ * - newPage: true → Force item to start on a new page
+ * - newPage: false → Allow item to share page with previous content
+ * - newPage: undefined → Default behavior (page break after each item)
+ *
+ * Note: The pageCount property in each item is used as a hint for scaling but may
+ * not be exact. The actual page count depends on content size and layout.
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   { content: document.getElementById('section1'), pageCount: 2, title: 'Introduction', newPage: true },
+ *   { content: '<div><h1>Chapter 2</h1><p>Content...</p></div>', pageCount: 3, title: 'Details', newPage: true },
+ *   { content: document.getElementById('section3'), pageCount: 1, title: 'Summary', newPage: false },
+ * ];
+ *
+ * const result = await generateBatchPDF(items, 'report.pdf', {
+ *   format: 'a4',
+ *   showPageNumbers: true,
+ *   onProgress: (progress) => console.log(`${progress}%`),
+ * });
+ *
+ * console.log(`Generated ${result.totalPages} pages`);
+ * console.log('Items:', result.items);
+ * ```
+ */
+export async function generateBatchPDF(
+  items: PDFContentItem[],
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const result = await generateBatchPDFBlob(items, options);
+
+  // Download the PDF if in browser environment and filename provided
+  if (filename && typeof document !== 'undefined') {
+    const sanitized = sanitizeFilename(filename, 'pdf');
+    const url = URL.createObjectURL(result.blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = sanitized;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  return result;
+}
+
+/**
+ * Generate batch PDF blob without downloading
+ *
+ * @example
+ * ```typescript
+ * const items = [
+ *   { content: element1, pageCount: 2 },
+ *   { content: element2, pageCount: 3 },
+ * ];
+ *
+ * const result = await generateBatchPDFBlob(items, options);
+ *
+ * // Upload to server
+ * const formData = new FormData();
+ * formData.append('pdf', result.blob, 'report.pdf');
+ * await fetch('/api/upload', { method: 'POST', body: formData });
+ * ```
+ */
+export async function generateBatchPDFBlob(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult> {
+  const startTime = Date.now();
+
+  if (!items || items.length === 0) {
+    throw new Error('Batch PDF generation requires at least one content item');
+  }
+
+  // Check if we're in a browser environment
+  const isBrowser = typeof document !== 'undefined';
+
+  if (!isBrowser) {
+    throw new Error('Batch PDF generation currently requires a browser environment');
+  }
+
+  // Check if all items have newPage: true (separate PDF approach)
+  const allNewPage = items.every(item => item.newPage === true);
+
+  // Check if all items have newPage: false (combined approach)
+  const allCombined = items.every(item => item.newPage === false);
+
+  // If mixed or undefined, use the separate PDF approach for safety
+  const useSeparatePDFs = allNewPage || (!allCombined && items.some(item => item.newPage !== false));
+
+  if (useSeparatePDFs) {
+    // APPROACH 1: Generate separate PDFs and merge them
+    // This guarantees each item starts on a new page
+    return generateBatchPDFSeparate(items, options, startTime);
+  } else {
+    // APPROACH 2: Combine all items in one container (for newPage: false)
+    // Items can share pages naturally
+    return generateBatchPDFCombined(items, options, startTime);
+  }
+}
+
+/**
+ * Generate separate PDFs for each item and merge them
+ * This ensures each item starts on a new page
+ */
+async function generateBatchPDFSeparate(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions>,
+  startTime: number
+): Promise<BatchPDFGenerationResult> {
+  const progressCallback = options.onProgress;
+  const itemResults: BatchPDFGenerationResult['items'] = [];
+
+  // We'll generate each item as a separate PDF and concatenate the blobs
+  // This is simpler than trying to merge PDF objects
+  const individualPDFs: Array<{ blob: Blob; title?: string }> = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    // Progress tracking
+    if (progressCallback) {
+      const progress = Math.floor(((i + 1) / items.length) * 90); // Reserve 10% for final merge
+      progressCallback(progress);
+    }
+
+    // Prepare element
+    let element: HTMLElement;
+    if (typeof item.content === 'string') {
+      element = htmlStringToElement(item.content);
+    } else {
+      element = item.content.cloneNode(true) as HTMLElement;
+    }
+
+    // Generate individual PDF for this item
+    const generator = new PDFGenerator(options);
+    const blob = await generator.generateBlob(element);
+
+    individualPDFs.push({
+      blob,
+      title: item.title
+    });
+  }
+
+  // Use pdf-lib to properly merge all PDFs into one
+  const { PDFDocument } = await import('pdf-lib');
+
+  // Create a new merged PDF document
+  const mergedPdf = await PDFDocument.create();
+
+  let currentPage = 0;
+
+  // Process each individual PDF
+  for (let i = 0; i < individualPDFs.length; i++) {
+    const pdfData = individualPDFs[i];
+
+    try {
+      // Convert blob to array buffer
+      const arrayBuffer = await pdfData.blob.arrayBuffer();
+
+      // Load the PDF using pdf-lib
+      const pdf = await PDFDocument.load(arrayBuffer);
+
+      // Get all pages from this PDF
+      const pageCount = pdf.getPageCount();
+
+      // Copy all pages from this PDF to the merged PDF
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+      // Add each copied page to the merged document
+      copiedPages.forEach(page => {
+        mergedPdf.addPage(page);
+      });
+
+      // Track metadata for this item
+      const startPage = currentPage + 1;
+      const endPage = currentPage + pageCount;
+
+      itemResults.push({
+        title: pdfData.title,
+        startPage,
+        endPage,
+        pageCount,
+        scaleFactor: 1.0,
+      });
+
+      currentPage = endPage;
+
+    } catch (error) {
+      console.error(`Failed to merge PDF for item ${i}:`, error);
+
+      // Fallback metadata (still add to results even if merge failed)
+      const pageCount = 1;
+      const startPage = currentPage + 1;
+      const endPage = currentPage + pageCount;
+
+      itemResults.push({
+        title: pdfData.title,
+        startPage,
+        endPage,
+        pageCount,
+        scaleFactor: 1.0,
+      });
+
+      currentPage = endPage;
+    }
+  }
+
+  // Save the merged PDF as bytes
+  const mergedPdfBytes = await mergedPdf.save();
+
+  // Convert to Blob (type assertion needed for pdf-lib compatibility)
+  const finalBlob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
+  const totalPages = currentPage;
+  const generationTime = Date.now() - startTime;
+
+  if (progressCallback) {
+    progressCallback(100);
+  }
+
+  if (options.onComplete) {
+    options.onComplete(finalBlob);
+  }
+
+  return {
+    blob: finalBlob,
+    totalPages,
+    fileSize: finalBlob.size,
+    generationTime,
+    items: itemResults,
+  };
+}
+
+/**
+ * Combine all items in one container (for newPage: false)
+ * Items can share pages naturally
+ */
+async function generateBatchPDFCombined(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions>,
+  startTime: number
+): Promise<BatchPDFGenerationResult> {
+  const progressCallback = options.onProgress;
+
+  // Create a container for all content items
+  const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.width = '794px'; // A4 width at 96 DPI
+  document.body.appendChild(container);
+
+  try {
+    // Process each content item
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      let element: HTMLElement;
+
+      if (typeof item.content === 'string') {
+        element = htmlStringToElement(item.content);
+      } else {
+        element = item.content.cloneNode(true) as HTMLElement;
+      }
+
+      container.appendChild(element);
+    }
+
+    // Load external styles if any
+    await loadExternalStyles(container);
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Track progress
+    if (progressCallback) {
+      progressCallback(50);
+    }
+
+    // Generate the PDF using the combined container
+    const generator = new PDFGenerator(options);
+    const blob = await generator.generateBlob(container);
+
+    // Estimate page breakdown
+    const totalPages = Math.ceil(items.reduce((sum, item) => sum + (item.pageCount || 1), 0));
+
+    const itemResults: BatchPDFGenerationResult['items'] = items.map((item, index) => {
+      const previousPages = items.slice(0, index).reduce((sum, it) => sum + (it.pageCount || 1), 0);
+      return {
+        title: item.title,
+        startPage: previousPages + 1,
+        endPage: previousPages + (item.pageCount || 1),
+        pageCount: item.pageCount || 1,
+        scaleFactor: 1.0,
+      };
+    });
+
+    const generationTime = Date.now() - startTime;
+
+    if (progressCallback) {
+      progressCallback(100);
+    }
+
+    if (options.onComplete) {
+      options.onComplete(blob);
+    }
+
+    return {
+      blob,
+      totalPages,
+      fileSize: blob.size,
+      generationTime,
+      items: itemResults,
+    };
+  } finally {
+    // Cleanup
+    if (container.parentNode) {
+      container.parentNode.removeChild(container);
     }
   }
 }

@@ -4,9 +4,15 @@
  * React hooks for PDF generation
  */
 
-export { usePDFGenerator, usePDFGeneratorManual } from './usePDFGenerator';
+export {
+  usePDFGenerator,
+  usePDFGeneratorManual,
+  useBatchPDFGenerator,
+} from './usePDFGenerator';
 export type {
   UsePDFGeneratorOptions,
   UsePDFGeneratorReturn,
   UsePDFGeneratorManualReturn,
+  UseBatchPDFGeneratorOptions,
+  UseBatchPDFGeneratorReturn,
 } from './usePDFGenerator';

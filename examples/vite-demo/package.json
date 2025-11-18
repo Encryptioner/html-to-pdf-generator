@@ -1,0 +1,17 @@
+{
+  "name": "vite-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@encryptioner/html-to-pdf-generator": "file:../.."
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}

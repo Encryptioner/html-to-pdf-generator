@@ -38,6 +38,31 @@ A modern, reusable library for generating multi-page PDFs from HTML content with
 - **Custom Break Points**: Define where pages should break
 - **Widow/Orphan Control**: Prevents lonely lines at page boundaries
 
+### 📖 Comprehensive Documentation
+
+**Core Features:**
+- [Multi-Page Generation](./documentation/features/multi-page.md)
+- [Image Handling](./documentation/features/images.md)
+- [Table Support](./documentation/features/tables.md)
+- [Page Breaks](./documentation/features/page-breaks.md)
+- [Color Management](./documentation/features/colors.md)
+
+**Advanced Features:**
+- [Watermarks](./documentation/advanced/watermarks.md)
+- [Headers & Footers](./documentation/advanced/headers-footers.md)
+- [Metadata](./documentation/advanced/metadata.md)
+- [Batch Generation](./documentation/advanced/batch-generation.md)
+- [Templates](./documentation/advanced/templates.md)
+- [Fonts](./documentation/advanced/fonts.md)
+- [Table of Contents](./documentation/advanced/table-of-contents.md)
+- [Bookmarks](./documentation/advanced/bookmarks.md)
+- [Security & Encryption](./documentation/advanced/security.md)
+- [Async Processing](./documentation/advanced/async-processing.md)
+- [Preview Component](./documentation/advanced/preview.md)
+- [URL to PDF](./documentation/advanced/url-to-pdf.md)
+
+**[📚 Full Documentation Index](./documentation/index.md)**
+
 ## Installation
 
 ```bash
@@ -211,6 +236,43 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 </button>
 ```
 
+## MCP Server (Model Context Protocol)
+
+The package includes an **MCP server** for server-side PDF generation, enabling Claude Desktop and other MCP clients to generate PDFs.
+
+### Quick Setup for Claude Desktop
+
+1. **Build the package:**
+   ```bash
+   pnpm install && pnpm run build
+   ```
+
+2. **Add to Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+   ```json
+   {
+     "mcpServers": {
+       "html-to-pdf": {
+         "command": "node",
+         "args": ["/absolute/path/to/html-to-pdf-generator/mcp/dist/index.js"]
+       }
+     }
+   }
+   ```
+
+3. **Restart Claude Desktop** and use PDF generation in your conversations:
+   ```
+   You: Generate a PDF invoice with these items and save to /tmp/invoice.pdf
+   Claude: [Uses generate_pdf tool to create PDF]
+   ```
+
+### MCP Tools Available
+
+- **`generate_pdf`** - Generate PDF from HTML with full feature support (watermarks, headers/footers, metadata)
+- **`generate_batch_pdf`** - Combine multiple HTML sections into one PDF with auto-scaling
+- **`generate_pdf_from_url`** - Convert web pages to PDF (CORS-aware)
+
+**📖 Full MCP Documentation:** See [mcp/README.md](./mcp/README.md) for complete setup, API reference, and examples.
+
 ## Advanced Usage
 
 ### Using the PDFGenerator Class
@@ -309,6 +371,44 @@ function DocumentViewer() {
   );
 }
 ```
+
+### Batch PDF Generation
+
+Combine multiple HTML elements or strings into a single PDF with control over page breaks:
+
+```typescript
+import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
+
+const items = [
+  {
+    content: document.getElementById('intro'),
+    pageCount: 2,
+    title: 'Introduction',
+    newPage: true  // Force on new page
+  },
+  {
+    content: document.getElementById('main'),
+    pageCount: 5,
+    title: 'Main Content',
+    newPage: true  // Force on new page
+  },
+  {
+    content: document.getElementById('summary'),
+    pageCount: 1,
+    title: 'Summary',
+    newPage: false  // Can share page with previous content
+  },
+];
+
+const result = await generateBatchPDF(items, 'report.pdf', {
+  format: 'a4',
+  showPageNumbers: true,
+});
+
+console.log(`Generated ${result.totalPages} pages`);
+```
+
+**📖 For detailed documentation, examples, and API reference, see [Batch Generation Guide](./documentation/advanced/batch-generation.md)**
 
 ## API Reference
 
@@ -458,6 +558,64 @@ async function generatePDFBlob(
 ): Promise<Blob>
 ```
 
+### generateBatchPDF()
+
+```typescript
+async function generateBatchPDF(
+  items: PDFContentItem[],
+  filename: string = 'document.pdf',
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult>
+```
+
+Generate and download a PDF from multiple content items.
+
+**Parameters:**
+- `items`: Array of content items, each with:
+  - `content`: HTMLElement or HTML string
+  - `pageCount`: Target page count (used as layout hint)
+  - `title`: Optional title for tracking
+  - `newPage`: Optional page break control (`true` = force new page, `false` = allow sharing, `undefined` = default)
+- `filename`: Output filename
+- `options`: PDF generation options
+
+**Returns:** BatchPDFGenerationResult containing:
+- `blob`: The generated PDF blob
+- `totalPages`: Total number of pages
+- `fileSize`: Size in bytes
+- `generationTime`: Time taken in milliseconds
+- `items`: Per-item metadata (page ranges, titles, etc.)
+
+### generateBatchPDFBlob()
+
+```typescript
+async function generateBatchPDFBlob(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions> = {}
+): Promise<BatchPDFGenerationResult>
+```
+
+Generate a batch PDF blob without downloading (useful for server uploads).
+
+### useBatchPDFGenerator()
+
+```typescript
+function useBatchPDFGenerator(
+  options?: UseBatchPDFGeneratorOptions
+): UseBatchPDFGeneratorReturn
+```
+
+React hook for batch PDF generation.
+
+**Returns:**
+- `generateBatchPDF(items)`: Generate and download PDF from items array
+- `generateBatchBlob(items)`: Generate blob without downloading
+- `isGenerating`: Whether PDF is being generated
+- `progress`: Current progress (0-100)
+- `error`: Error if generation failed
+- `result`: BatchPDFGenerationResult from last successful generation
+- `reset()`: Reset state
+
 ## Utilities
 
 ### PAPER_FORMATS
@@ -546,49 +704,16 @@ Always test with:
 
 ## Limitations
 
-1. **Complex CSS**: Some advanced CSS features may not render perfectly
-2. **SVG Elements**: May require special handling
-3. **Web Fonts**: Ensure fonts are loaded before generation
-4. **Interactive Elements**: Only visual representation is captured
-
-## Future Enhancements
-
-- [ ] Custom headers and footers with HTML
-- [ ] Table of contents generation
-- [ ] Watermark support
-- [ ] Encrypted PDFs
-- [ ] Digital signatures
-- [ ] Better SVG support
-- [ ] Font embedding
-- [ ] Parallel page generation
-
-## Converting to NPM Package
-
-To convert this library into a standalone NPM package:
-
-1. Copy the `pdf-generator` folder to a new project
-2. Create `package.json`:
-
-```json
-{
-  "name": "@yourorg/pdf-generator",
-  "version": "1.0.0",
-  "description": "Modern multi-page PDF generator from HTML",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "peerDependencies": {
-    "react": "^18.0.0 || ^19.0.0",
-    "jspdf": "^3.0.0",
-    "html2canvas": "^1.4.0"
-  }
-}
-```
-
-3. Build and publish to NPM
+**Current Limitations:**
+1. **Browser Environment Required** - Core library requires DOM and canvas APIs (use Node adapter with Puppeteer for server-side)
+2. **Complex CSS** - Some advanced CSS features may render differently than in browser
+3. **Web Fonts** - Ensure fonts are loaded before PDF generation
+4. **Interactive Elements** - Only visual representation is captured (no form inputs, videos, etc.)
+5. **Large Documents** - Very large documents (50+ pages) may take several seconds to generate
 
 ## License
 
-MIT
+MIT License - see [LICENSE.md](./LICENSE.md) for details
 
 ## Contributing
 

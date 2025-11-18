@@ -33,12 +33,16 @@ export {
   generatePDFBlob,
   generatePDFFromHTML,
   generateBlobFromHTML,
+  generateBatchPDF,
+  generateBatchPDFBlob,
 } from './core';
 export type {
   PDFGeneratorOptions,
   PDFPageConfig,
   PDFGenerationResult,
   PDFRenderContext,
+  PDFContentItem,
+  BatchPDFGenerationResult,
 } from './types';
 export {
   PAPER_FORMATS,
