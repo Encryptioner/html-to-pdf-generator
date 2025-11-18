@@ -693,7 +693,7 @@ customElements.define('pdf-document', PDFDocument);
 
 ## Next Steps
 
-- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Image Handling](../features/images.md)** - Basic image handling to DPI control and print quality
 - **[Options Reference](../api/options.md)** - Complete options documentation
 - **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
 - **[Production Examples](../examples/production-examples.md)** - Real-world use cases

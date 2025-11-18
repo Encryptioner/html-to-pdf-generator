@@ -42,7 +42,7 @@ A modern, reusable library for generating multi-page PDFs from HTML content with
 
 **Core Features:**
 - [Multi-Page Generation](./documentation/features/multi-page.md)
-- [Image Handling](./documentation/advanced/image-optimization.md)
+- [Image Handling](./documentation/features/images.md)
 - [Table Support](./documentation/features/tables.md)
 - [Page Breaks](./documentation/features/page-breaks.md)
 - [Color Management](./documentation/features/colors.md)

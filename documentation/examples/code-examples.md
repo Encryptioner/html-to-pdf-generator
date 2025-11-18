@@ -693,7 +693,7 @@ function showError(message) {
 - **[Best Practices](../guides/best-practices.md)** - Optimization tips
 - **[Options Reference](../api/options.md)** - Complete options documentation
 - **[Multi-Page Documents](../features/multi-page.md)** - Automatic pagination
-- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Image Handling](../features/images.md)** - Basic image handling to DPI control and print quality
 
 ---
 

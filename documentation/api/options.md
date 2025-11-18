@@ -5,7 +5,7 @@ Complete reference for all PDF generation options.
 ## Feature Documentation Links
 
 - **[Multi-Page Generation](../features/multi-page.md)** - Page splitting and pagination
-- **[Image Optimization](../advanced/image-optimization.md)** - Image handling and quality
+- **[Image Handling](../features/images.md)** - Image handling and quality
 - **[Watermarks](../advanced/watermarks.md)** - Add watermarks to PDFs
 - **[Headers & Footers](../advanced/headers-footers.md)** - Dynamic templates
 - **[Metadata](../advanced/metadata.md)** - Document properties

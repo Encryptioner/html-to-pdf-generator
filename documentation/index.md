@@ -17,7 +17,7 @@
 
 ### Core Features
 - **[Multi-Page Generation](./features/multi-page.md)** - Automatic page splitting and pagination
-- **[Image Optimization](./advanced/image-optimization.md)** - DPI control and print quality
+- **[Image Handling](./features/images.md)** - Basic image handling to DPI control and print quality
 - **[Table Support](./features/tables.md)** - Smart table pagination with header repetition
 - **[Page Breaks](./features/page-breaks.md)** - Control page splitting behavior
 - **[Color Management](./features/colors.md)** - OKLCH & Tailwind CSS support

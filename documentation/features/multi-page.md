@@ -262,7 +262,6 @@ await generatePDF(chart, 'chart.pdf', {
 For more control over multi-page PDFs:
 - **[Options Reference](../api/options.md)** - All available options for pagination control
 - **[Best Practices](../guides/best-practices.md)** - Optimize performance and quality
-- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
 
 ## Performance Tips
 
@@ -287,7 +286,7 @@ Times vary based on content complexity, images, and device performance.
 
 ## Next Steps
 
-- **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
+- **[Image Optimization](../features/images.md)** - Basic image handling to DPI control and print quality
 - **[Options Reference](../api/options.md)** - Complete options documentation
 - **[Code Examples](../examples/code-examples.md)** - Copy-paste ready samples
 - **[Best Practices](../guides/best-practices.md)** - Optimization tips
