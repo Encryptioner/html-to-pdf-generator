@@ -645,23 +645,168 @@ export async function generateBatchPDFBlob(
     throw new Error('Batch PDF generation currently requires a browser environment');
   }
 
-  // Prepare options with progress callback and defaults
-  const progressCallback = options.onProgress;
-  const mergedOptions: Required<PDFGeneratorOptions> = {
-    ...DEFAULT_OPTIONS,
-    ...options,
-    onProgress: (progress: number) => {
-      progressCallback?.(progress);
-    },
-    colorReplacements: {
-      ...TAILWIND_COLOR_REPLACEMENTS,
-      ...options.colorReplacements,
-    },
-  };
+  // Check if all items have newPage: true (separate PDF approach)
+  const allNewPage = items.every(item => item.newPage === true);
 
-  // Calculate page height in pixels for page break logic
-  const pageConfig = calculatePageConfig(mergedOptions);
-  const pageHeightPx = pageConfig.heightPx;
+  // Check if all items have newPage: false (combined approach)
+  const allCombined = items.every(item => item.newPage === false);
+
+  // If mixed or undefined, use the separate PDF approach for safety
+  const useSeparatePDFs = allNewPage || (!allCombined && items.some(item => item.newPage !== false));
+
+  if (useSeparatePDFs) {
+    // APPROACH 1: Generate separate PDFs and merge them
+    // This guarantees each item starts on a new page
+    return generateBatchPDFSeparate(items, options, startTime);
+  } else {
+    // APPROACH 2: Combine all items in one container (for newPage: false)
+    // Items can share pages naturally
+    return generateBatchPDFCombined(items, options, startTime);
+  }
+}
+
+/**
+ * Generate separate PDFs for each item and merge them
+ * This ensures each item starts on a new page
+ */
+async function generateBatchPDFSeparate(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions>,
+  startTime: number
+): Promise<BatchPDFGenerationResult> {
+  const progressCallback = options.onProgress;
+  const itemResults: BatchPDFGenerationResult['items'] = [];
+
+  // We'll generate each item as a separate PDF and concatenate the blobs
+  // This is simpler than trying to merge PDF objects
+  const individualPDFs: Array<{ blob: Blob; title?: string }> = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
+
+    // Progress tracking
+    if (progressCallback) {
+      const progress = Math.floor(((i + 1) / items.length) * 90); // Reserve 10% for final merge
+      progressCallback(progress);
+    }
+
+    // Prepare element
+    let element: HTMLElement;
+    if (typeof item.content === 'string') {
+      element = htmlStringToElement(item.content);
+    } else {
+      element = item.content.cloneNode(true) as HTMLElement;
+    }
+
+    // Generate individual PDF for this item
+    const generator = new PDFGenerator(options);
+    const blob = await generator.generateBlob(element);
+
+    individualPDFs.push({
+      blob,
+      title: item.title
+    });
+  }
+
+  // Use pdf-lib to properly merge all PDFs into one
+  const { PDFDocument } = await import('pdf-lib');
+
+  // Create a new merged PDF document
+  const mergedPdf = await PDFDocument.create();
+
+  let currentPage = 0;
+
+  // Process each individual PDF
+  for (let i = 0; i < individualPDFs.length; i++) {
+    const pdfData = individualPDFs[i];
+
+    try {
+      // Convert blob to array buffer
+      const arrayBuffer = await pdfData.blob.arrayBuffer();
+
+      // Load the PDF using pdf-lib
+      const pdf = await PDFDocument.load(arrayBuffer);
+
+      // Get all pages from this PDF
+      const pageCount = pdf.getPageCount();
+
+      // Copy all pages from this PDF to the merged PDF
+      const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+
+      // Add each copied page to the merged document
+      copiedPages.forEach(page => {
+        mergedPdf.addPage(page);
+      });
+
+      // Track metadata for this item
+      const startPage = currentPage + 1;
+      const endPage = currentPage + pageCount;
+
+      itemResults.push({
+        title: pdfData.title,
+        startPage,
+        endPage,
+        pageCount,
+        scaleFactor: 1.0,
+      });
+
+      currentPage = endPage;
+
+    } catch (error) {
+      console.error(`Failed to merge PDF for item ${i}:`, error);
+
+      // Fallback metadata (still add to results even if merge failed)
+      const pageCount = 1;
+      const startPage = currentPage + 1;
+      const endPage = currentPage + pageCount;
+
+      itemResults.push({
+        title: pdfData.title,
+        startPage,
+        endPage,
+        pageCount,
+        scaleFactor: 1.0,
+      });
+
+      currentPage = endPage;
+    }
+  }
+
+  // Save the merged PDF as bytes
+  const mergedPdfBytes = await mergedPdf.save();
+
+  // Convert to Blob (type assertion needed for pdf-lib compatibility)
+  const finalBlob = new Blob([mergedPdfBytes as any], { type: 'application/pdf' });
+  const totalPages = currentPage;
+  const generationTime = Date.now() - startTime;
+
+  if (progressCallback) {
+    progressCallback(100);
+  }
+
+  if (options.onComplete) {
+    options.onComplete(finalBlob);
+  }
+
+  return {
+    blob: finalBlob,
+    totalPages,
+    fileSize: finalBlob.size,
+    generationTime,
+    items: itemResults,
+  };
+}
+
+/**
+ * Combine all items in one container (for newPage: false)
+ * Items can share pages naturally
+ */
+async function generateBatchPDFCombined(
+  items: PDFContentItem[],
+  options: Partial<PDFGeneratorOptions>,
+  startTime: number
+): Promise<BatchPDFGenerationResult> {
+  const progressCallback = options.onProgress;
 
   // Create a container for all content items
   const container = document.createElement('div');
@@ -671,13 +816,7 @@ export async function generateBatchPDFBlob(
   container.style.width = '794px'; // A4 width at 96 DPI
   document.body.appendChild(container);
 
-  const tempElements: HTMLElement[] = [];
-  const itemMetadata: Array<{ title?: string; element: HTMLElement }> = [];
-
   try {
-
-    let cumulativeHeight = 0;
-
     // Process each content item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -685,68 +824,29 @@ export async function generateBatchPDFBlob(
 
       if (typeof item.content === 'string') {
         element = htmlStringToElement(item.content);
-        tempElements.push(element);
       } else {
-        // Clone the element to avoid modifying the original
         element = item.content.cloneNode(true) as HTMLElement;
-        tempElements.push(element);
       }
 
-      // Append to container first to measure height
       container.appendChild(element);
-
-      // Wait for layout
-      await new Promise(resolve => setTimeout(resolve, 50));
-
-      // Get the element's height
-      const elementHeight = element.scrollHeight;
-
-      // Handle page breaks based on newPage parameter
-      if (item.newPage === true && i > 0) {
-        // Force this item to start on a new page
-        // Calculate how much space is left on current page
-        const currentPagePosition = cumulativeHeight % pageHeightPx;
-
-        if (currentPagePosition > 0) {
-          // Add margin to push to next page
-          const marginNeeded = pageHeightPx - currentPagePosition;
-          element.style.marginTop = `${marginNeeded}px`;
-          cumulativeHeight += marginNeeded;
-        }
-      } else if (item.newPage === false) {
-        // Allow item to share page with previous content (no forced page break)
-        // No additional margin needed
-      } else if (item.newPage === undefined) {
-        // Default behavior: add page break after each item (except the last one)
-        if (i < items.length - 1) {
-          // Calculate margin to push next item to new page
-          const currentPagePosition = (cumulativeHeight + elementHeight) % pageHeightPx;
-
-          if (currentPagePosition > 0) {
-            const marginNeeded = pageHeightPx - currentPagePosition;
-            element.style.marginBottom = `${marginNeeded}px`;
-            cumulativeHeight += marginNeeded;
-          }
-        }
-      }
-
-      cumulativeHeight += elementHeight;
-      itemMetadata.push({ title: item.title, element });
     }
 
     // Load external styles if any
     await loadExternalStyles(container);
     await new Promise(resolve => setTimeout(resolve, 200));
 
+    // Track progress
+    if (progressCallback) {
+      progressCallback(50);
+    }
+
     // Generate the PDF using the combined container
-    const generator = new PDFGenerator(mergedOptions);
+    const generator = new PDFGenerator(options);
     const blob = await generator.generateBlob(container);
 
-    // For now, we don't have accurate per-item page tracking without accessing internal PDF structure
-    // We'll estimate based on the overall page count
+    // Estimate page breakdown
     const totalPages = Math.ceil(items.reduce((sum, item) => sum + (item.pageCount || 1), 0));
 
-    // Build item results with basic metadata
     const itemResults: BatchPDFGenerationResult['items'] = items.map((item, index) => {
       const previousPages = items.slice(0, index).reduce((sum, it) => sum + (it.pageCount || 1), 0);
       return {
@@ -754,13 +854,19 @@ export async function generateBatchPDFBlob(
         startPage: previousPages + 1,
         endPage: previousPages + (item.pageCount || 1),
         pageCount: item.pageCount || 1,
-        scaleFactor: 1.0, // No scaling in this simplified implementation
+        scaleFactor: 1.0,
       };
     });
 
     const generationTime = Date.now() - startTime;
 
-    options.onComplete?.(blob);
+    if (progressCallback) {
+      progressCallback(100);
+    }
+
+    if (options.onComplete) {
+      options.onComplete(blob);
+    }
 
     return {
       blob,
