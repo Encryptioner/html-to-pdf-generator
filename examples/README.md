@@ -28,32 +28,32 @@ node examples/test-batch-newpage.cjs
 - Implementation details
 - Usage examples
 
-### 2. Interactive Browser Demo
+### 2. Interactive Browser Demo (Vite)
 
-**File:** `batch-newpage-demo.html`
+**Directory:** `vite-demo/`
 
-An interactive HTML demo that allows you to test different newPage scenarios in the browser.
+An interactive browser demo using Vite to bundle the library and its dependencies.
 
 **Run:**
 ```bash
-# First, build the library
-pnpm run build
-
-# Then open in browser
-open examples/batch-newpage-demo.html
-# Or serve with a local server:
-python3 -m http.server 8000
-# Then visit: http://localhost:8000/examples/batch-newpage-demo.html
+cd examples/vite-demo
+pnpm install
+pnpm dev
 ```
+
+Then open the URL shown in terminal (usually `http://localhost:5173`).
 
 **Features:**
 - Visual test content (DOM A and DOM B)
 - Three interactive test scenarios:
-  1. `newPage = true` - Forces each item on separate pages
+  1. `newPage = true` - Forces each item on separate pages (FIXES THE ISSUE)
   2. `newPage = false` - Allows items to share pages
   3. `newPage = undefined` - Default behavior
 - Real-time PDF generation with results display
 - Shows total pages, file size, generation time, and item breakdown
+- Fully working demo with proper bundling
+
+**Why Vite?** The built library uses ES modules with bare imports that require a bundler. Vite handles this automatically during development.
 
 ## Test Scenarios
 
@@ -244,10 +244,13 @@ To verify the implementation works correctly:
    node examples/test-batch-newpage.cjs
    ```
 
-2. **Open the browser demo:**
+2. **Run the browser demo:**
    ```bash
-   open examples/batch-newpage-demo.html
+   cd examples/vite-demo
+   pnpm install
+   pnpm dev
    ```
+   Then open the shown URL and test all three scenarios.
 
 3. **Check the generated PDFs:**
    - With `newPage: true`, verify DOM A and DOM B are on separate pages
