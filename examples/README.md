@@ -4,7 +4,7 @@ This directory contains interactive demonstrations and test examples for the `@e
 
 ## Available Examples
 
-### 1. Interactive Vite Demo (Recommended)
+### Interactive Vite Demo (Recommended)
 
 **Directory:** `vite-demo/`
 
@@ -41,24 +41,6 @@ Then open `http://localhost:5173` in your browser.
 - Design patterns
 - Troubleshooting
 - Project structure
-
-### 2. Node.js Test Script
-
-**File:** `test-batch-newpage.cjs`
-
-A command-line test script demonstrating batch PDF `newPage` parameter test cases.
-
-**Run:**
-```bash
-node examples/test-batch-newpage.cjs
-```
-
-**Output:** Displays detailed test case information including:
-- Original issue description
-- Solution explanation
-- 4 test cases with input/expected output
-- Implementation details
-- Usage examples
 
 ---
 
@@ -254,12 +236,7 @@ function MyComponent() {
 
 To verify the implementation works correctly:
 
-1. **Run the test script:**
-   ```bash
-   node examples/test-batch-newpage.cjs
-   ```
-
-2. **Run the browser demo:**
+1. **Run the browser demo:**
    ```bash
    cd examples/vite-demo
    pnpm install
@@ -267,7 +244,7 @@ To verify the implementation works correctly:
    ```
    Then open the shown URL and test all three scenarios.
 
-3. **Check the generated PDFs:**
+2. **Check the generated PDFs:**
    - With `newPage: true`, verify DOM A and DOM B are on separate pages
    - With `newPage: false`, verify they can share a page if they fit
    - Check page numbers in the PDF viewer
