@@ -30,12 +30,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/encryptioner/html-to-pdf-generator.git"
+    "url": "https://github.com/Encryptioner/html-to-pdf-generator.git"
   },
   "bugs": {
-    "url": "https://github.com/encryptioner/html-to-pdf-generator/issues"
+    "url": "https://github.com/Encryptioner/html-to-pdf-generator/issues"
   },
-  "homepage": "https://github.com/encryptioner/html-to-pdf-generator#readme",
+  "homepage": "https://github.com/Encryptioner/html-to-pdf-generator#readme",
   "packageManager": "pnpm@9.0.0",
   "type": "module",
   "bin": {

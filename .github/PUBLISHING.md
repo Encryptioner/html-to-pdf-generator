@@ -352,7 +352,7 @@ git push origin master
 git push origin v1.1.0
 
 # 7. Monitor GitHub Actions
-# Go to: https://github.com/encryptioner/html-to-pdf-generator/actions
+# Go to: https://github.com/Encryptioner/html-to-pdf-generator/actions
 # Watch the "Publish to NPM" workflow
 
 # 8. Verify publication
@@ -570,16 +570,56 @@ pnpm version 1.0.2
 git push origin v1.0.2
 ```
 
+**If you need to move a tag to a different commit:**
+
+This happens when you create a tag, then make additional commits (like bug fixes) and want the tag to point to the latest commit.
+
+```bash
+# Scenario: You created tag v1.0.0, then made fixes, now want to move the tag
+
+# 1. Commit your fixes first
+git add .
+git commit -m "fix: your fix message"
+git push origin pre/release/1.0.0  # or your branch
+
+# 2. Delete the old tag locally
+git tag -d v1.0.0
+
+# 3. Delete the old tag from remote (this cancels any running workflow)
+git push origin --delete v1.0.0
+
+# 4. Create the tag again on the current commit
+git tag v1.0.0
+
+# 5. Force push the new tag
+git push origin v1.0.0
+
+# Alternative: Use --force flag in one step
+git tag -f v1.0.0              # Force create/move tag locally
+git push origin v1.0.0 --force # Force push to remote
+```
+
+**Important Notes:**
+- Always commit and push your code changes BEFORE creating/moving tags
+- Moving a tag will restart the publish workflow from the beginning
+- The package.json version must match the tag version (e.g., v1.0.0 → "version": "1.0.0")
+
 **If the workflow fails after pushing a tag:**
 1. Check the GitHub Actions logs for the error
 2. Fix the issue in your code
-3. Delete the failed tag (see above)
-4. Create a new patch version tag
-5. Push the new tag
+3. Commit and push the fixes
+4. Move the tag to the new commit (see above)
+   OR delete the tag and create a new patch version
+
+**Common workflow failures and fixes:**
+- **"Dependencies lock file not found"** → Commit pnpm-lock.yaml
+- **"Version mismatch"** → Update package.json version to match tag
+- **"Repository URL mismatch"** → Ensure repository URL in package.json matches GitHub (case-sensitive)
+- **ESLint errors** → Fix linting issues or temporarily disable linter in workflow
 
 ## Support
 
 For questions or issues:
-- GitHub Issues: https://github.com/encryptioner/html-to-pdf-generator/issues
+- GitHub Issues: https://github.com/Encryptioner/html-to-pdf-generator/issues
 - NPM Package: https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator
-- GitHub Actions: https://github.com/encryptioner/html-to-pdf-generator/actions
+- GitHub Actions: https://github.com/Encryptioner/html-to-pdf-generator/actions
