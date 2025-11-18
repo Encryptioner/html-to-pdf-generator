@@ -78,7 +78,6 @@ All bundles generated successfully:
 - [x] Test cases created
 
 ### Examples & Testing ✅
-- [x] Node.js test script (test-batch-newpage.cjs)
 - [x] Vite browser demo (fully functional)
 - [x] Package verification script (83 tests, all passing)
 
@@ -144,26 +143,6 @@ await generatePDF(element, 'document.pdf', {
 });
 ```
 
-### Batch PDF with newPage Parameter
-```typescript
-import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
-
-const items = [
-  {
-    content: domA,
-    pageCount: 1,
-    newPage: true,  // domA on page 1
-  },
-  {
-    content: domB,
-    pageCount: 1,
-    newPage: true,  // domB on page 2 (FIXED!)
-  },
-];
-
-await generateBatchPDF(items, 'report.pdf');
-```
-
 ### React Hook
 ```tsx
 import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
@@ -223,11 +202,6 @@ node scripts/verify-package.cjs
 
 **Expected Output:** 83/83 tests passed ✅
 
-### Run Node.js Example
-```bash
-node examples/test-batch-newpage.cjs
-```
-
 ### Run Browser Demo
 ```bash
 cd examples/vite-demo
@@ -250,26 +224,6 @@ pnpm dev
 - [x] No critical warnings or errors
 - [x] newPage parameter fully documented
 - [x] MCP server functional
-
----
-
-## Commits Summary
-
-1. `feat: add newPage parameter to batch PDF generation` (6b2f08a)
-   - Added newPage parameter to PDFContentItem
-   - Updated core implementation
-   - Updated documentation and MCP server
-
-2. `docs: add comprehensive newPage parameter examples and tests` (5d5668a)
-   - Added interactive demo
-   - Added Node.js test script
-   - Added examples/README.md
-   - Updated main README
-
-3. `fix: replace broken HTML demo with working Vite demo & add verification` (2338ea3)
-   - Fixed browser demo with Vite
-   - Added comprehensive verification script
-   - All 83 tests passing
 
 ---
 

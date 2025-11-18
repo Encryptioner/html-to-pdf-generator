@@ -300,7 +300,6 @@ function verifyDocumentation() {
     'documentation/features/colors.md',
     'mcp/README.md',
     'examples/README.md',
-    'examples/test-batch-newpage.cjs',
     'examples/vite-demo/README.md',
   ];
 
