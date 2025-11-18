@@ -174,11 +174,42 @@ export class PDFGenerator {
     document.body.appendChild(container);
 
     // Inject custom CSS for color replacements
-    const css = [
+    const cssParts = [
       generateColorReplacementCSS(this.options.colorReplacements, 'pdf-render-target'),
       this.options.customCSS,
-    ].join('\n\n');
+    ];
 
+    // Add media type emulation if set to 'print'
+    if (this.options.emulateMediaType === 'print') {
+      // Collect all @media print rules from stylesheets
+      const printStyles: string[] = [];
+
+      try {
+        for (let i = 0; i < document.styleSheets.length; i++) {
+          const sheet = document.styleSheets[i];
+          try {
+            const rules = sheet.cssRules || sheet.rules;
+            for (let j = 0; j < rules.length; j++) {
+              const rule = rules[j];
+              if (rule instanceof CSSMediaRule && rule.media.mediaText.includes('print')) {
+                // Extract rules inside @media print and apply them directly
+                printStyles.push(rule.cssText.replace('@media print', '').replace(/^\s*{\s*/, '').replace(/}\s*$/, ''));
+              }
+            }
+          } catch (e) {
+            // Skip stylesheets we can't access (CORS)
+          }
+        }
+      } catch (e) {
+        console.warn('Could not extract @media print styles:', e);
+      }
+
+      if (printStyles.length > 0) {
+        cssParts.push(`/* Emulated @media print styles */\n${printStyles.join('\n')}`);
+      }
+    }
+
+    const css = cssParts.join('\n\n');
     this.styleElement = createStyleElement(css, 'pdf-color-override');
     document.head.appendChild(this.styleElement);
 
@@ -425,19 +456,94 @@ export class PDFGenerator {
   }
 
   /**
-   * Apply header and footer callbacks (simplified text-based implementation)
-   * Note: For complex HTML headers/footers, use headerTemplate/footerTemplate instead
+   * Render template string with variable substitution
+   */
+  private renderTemplate(
+    template: string,
+    variables: {
+      pageNumber: number;
+      totalPages: number;
+      date?: string;
+      title?: string;
+    }
+  ): string {
+    let rendered = template;
+
+    rendered = rendered.replace(/\{\{pageNumber\}\}/g, String(variables.pageNumber));
+    rendered = rendered.replace(/\{\{totalPages\}\}/g, String(variables.totalPages));
+    rendered = rendered.replace(/\{\{date\}\}/g, variables.date || new Date().toLocaleDateString());
+    rendered = rendered.replace(/\{\{title\}\}/g, variables.title || '');
+
+    return rendered;
+  }
+
+  /**
+   * Apply header and footer templates or callbacks
    */
   private async applyHeaderFooter(pdf: jsPDF, pageNumber: number, totalPages: number): Promise<void> {
     const pageSize = pdf.internal.pageSize;
     const pageHeight = pageSize.getHeight();
     const pageWidth = pageSize.getWidth();
+    const [marginTop, marginRight, marginBottom, marginLeft] = this.options.margins;
 
-    // Apply header callback if provided
-    if (this.options.header) {
+    // Apply headerTemplate if provided
+    if (this.options.headerTemplate && this.options.headerTemplate.template) {
+      const template = this.options.headerTemplate;
+      const templateString = template.template!; // Non-null assertion - checked above
+
+      // Skip first page if requested
+      if (pageNumber === 1 && template.firstPage === false) {
+        // Don't render on first page
+      } else {
+        const height = template.height || 15; // mm
+        const heightPx = height * 3.7795; // Convert mm to pixels
+
+        // Render template with variables
+        const html = this.renderTemplate(templateString, {
+          pageNumber,
+          totalPages,
+          date: new Date().toLocaleDateString(),
+          title: this.options.metadata?.title || ''
+        });
+
+        // Create temporary element
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = `${this.pageConfig.widthPx}px`;
+        container.style.height = `${heightPx}px`;
+        container.style.overflow = 'hidden';
+
+        // Apply custom CSS if provided
+        if (template.css) {
+          container.style.cssText += template.css;
+        }
+
+        document.body.appendChild(container);
+
+        try {
+          // Render to canvas
+          const canvas = await html2canvas(container, {
+            scale: 1,
+            backgroundColor: null,
+            logging: false,
+          });
+
+          // Add to PDF
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', marginLeft, marginTop, this.pageConfig.usableWidth, height);
+        } catch (error) {
+          console.error('Failed to render header template:', error);
+        } finally {
+          document.body.removeChild(container);
+        }
+      }
+    }
+    // Fallback to header callback
+    else if (this.options.header) {
       const headerElement = this.options.header(pageNumber, totalPages);
       if (headerElement) {
-        // Simple text extraction from element
         const headerText = headerElement.textContent || headerElement.innerText || '';
         if (headerText) {
           pdf.setFontSize(10);
@@ -447,11 +553,65 @@ export class PDFGenerator {
       }
     }
 
-    // Apply footer callback if provided
-    if (this.options.footer) {
+    // Apply footerTemplate if provided
+    if (this.options.footerTemplate && this.options.footerTemplate.template) {
+      const template = this.options.footerTemplate;
+      const templateString = template.template!; // Non-null assertion - checked above
+
+      // Skip first page if requested
+      if (pageNumber === 1 && template.firstPage === false) {
+        // Don't render on first page
+      } else {
+        const height = template.height || 15; // mm
+        const heightPx = height * 3.7795; // Convert mm to pixels
+
+        // Render template with variables
+        const html = this.renderTemplate(templateString, {
+          pageNumber,
+          totalPages,
+          date: new Date().toLocaleDateString(),
+          title: this.options.metadata?.title || ''
+        });
+
+        // Create temporary element
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = `${this.pageConfig.widthPx}px`;
+        container.style.height = `${heightPx}px`;
+        container.style.overflow = 'hidden';
+
+        // Apply custom CSS if provided
+        if (template.css) {
+          container.style.cssText += template.css;
+        }
+
+        document.body.appendChild(container);
+
+        try {
+          // Render to canvas
+          const canvas = await html2canvas(container, {
+            scale: 1,
+            backgroundColor: null,
+            logging: false,
+          });
+
+          // Add to PDF
+          const imgData = canvas.toDataURL('image/png');
+          const yPosition = pageHeight - marginBottom - height;
+          pdf.addImage(imgData, 'PNG', marginLeft, yPosition, this.pageConfig.usableWidth, height);
+        } catch (error) {
+          console.error('Failed to render footer template:', error);
+        } finally {
+          document.body.removeChild(container);
+        }
+      }
+    }
+    // Fallback to footer callback
+    else if (this.options.footer) {
       const footerElement = this.options.footer(pageNumber, totalPages);
       if (footerElement) {
-        // Simple text extraction from element
         const footerText = footerElement.textContent || footerElement.innerText || '';
         if (footerText) {
           pdf.setFontSize(10);
