@@ -236,7 +236,7 @@ await generatePDF(element, 'document.pdf', {
 Now that you've created your first PDF, explore more features:
 
 ### Essential Guides
-- **[Multi-Page Documents](../advanced/multi-page.md)** - Handle long documents with automatic pagination
+- **[Multi-Page Documents](../features/multi-page.md)** - Handle long documents with automatic pagination
 - **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
 - **[Options Reference](../api/options.md)** - All configuration options
 - **[Best Practices](./best-practices.md)** - Optimize performance and quality

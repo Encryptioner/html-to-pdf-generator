@@ -692,7 +692,7 @@ function showError(message) {
 - **[Production Examples](./production-examples.md)** - Real-world use cases
 - **[Best Practices](../guides/best-practices.md)** - Optimization tips
 - **[Options Reference](../api/options.md)** - Complete options documentation
-- **[Multi-Page Documents](../advanced/multi-page.md)** - Automatic pagination
+- **[Multi-Page Documents](../features/multi-page.md)** - Automatic pagination
 - **[Image Optimization](../advanced/image-optimization.md)** - DPI control and print quality
 
 ---

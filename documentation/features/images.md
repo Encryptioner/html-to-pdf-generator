@@ -434,6 +434,6 @@ await generatePDF(catalog, 'catalog.pdf', {
 ## See Also
 
 - [Image Optimization Advanced Guide](../advanced/image-optimization.md) - In-depth image optimization
-- [Multi-Page Generation](../advanced/multi-page.md) - Page splitting and pagination
+- [Multi-Page Generation](../features/multi-page.md) - Page splitting and pagination
 - [Best Practices](../guides/best-practices.md) - Overall best practices
 - [Options Reference](../api/options.md) - Complete options documentation

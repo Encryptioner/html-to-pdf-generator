@@ -305,6 +305,6 @@ await generatePDF(element, 'document.pdf', {
 
 ## See Also
 
-- [Multi-Page Generation](../advanced/multi-page.md)
+- [Multi-Page Generation](../features/multi-page.md)
 - [Table Support](./tables.md)
 - [Best Practices](../guides/best-practices.md)

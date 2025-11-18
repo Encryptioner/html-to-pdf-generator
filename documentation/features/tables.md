@@ -675,7 +675,7 @@ await generatePDF(reportElement, 'monthly-report.pdf', {
 
 ## See Also
 
-- [Multi-Page Generation](../advanced/multi-page.md) - Page splitting behavior
+- [Multi-Page Generation](../features/multi-page.md) - Page splitting behavior
 - [Page Breaks](./page-breaks.md) - Control page breaking
 - [Best Practices](../guides/best-practices.md) - Overall best practices
 - [Options Reference](../api/options.md) - Complete options documentation
