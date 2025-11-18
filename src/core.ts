@@ -293,6 +293,9 @@ export class PDFGenerator {
         this.addPageNumber(pdf, 1, 1);
       }
 
+      // Apply watermark to page
+      await this.applyWatermark(pdf);
+
       return pdf;
     }
 
@@ -359,6 +362,9 @@ export class PDFGenerator {
         this.addPageNumber(pdf, pageNumber, totalPages);
       }
 
+      // Apply watermark to page
+      await this.applyWatermark(pdf);
+
       // Move to next slice
       currentY += sliceHeight;
     }
@@ -385,6 +391,156 @@ export class PDFGenerator {
     } else {
       pdf.text(text, pageWidth / 2, 5, { align: 'center' });
     }
+  }
+
+  /**
+   * Apply watermark to current PDF page
+   */
+  private async applyWatermark(pdf: jsPDF): Promise<void> {
+    const watermark = this.options.watermark;
+
+    // Skip if no watermark configured
+    if (!watermark || (!watermark.text && !watermark.image)) {
+      return;
+    }
+
+    const pageSize = pdf.internal.pageSize;
+    const pageHeight = pageSize.getHeight();
+    const pageWidth = pageSize.getWidth();
+
+    // Save current graphics state
+    pdf.saveGraphicsState();
+
+    // Handle text watermark
+    if (watermark.text) {
+      const fontSize = watermark.fontSize || 48;
+      const opacity = watermark.opacity !== undefined ? watermark.opacity : 0.1;
+      const color = watermark.color || '#cccccc';
+      const position = watermark.position || 'diagonal';
+      const rotation = watermark.rotation !== undefined
+        ? watermark.rotation
+        : (position === 'diagonal' ? 45 : 0);
+
+      // Set text properties
+      pdf.setFontSize(fontSize);
+
+      // Parse color (support hex and rgb)
+      let r = 204, g = 204, b = 204; // Default gray
+      if (color.startsWith('#')) {
+        const hex = color.substring(1);
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+      }
+
+      pdf.setTextColor(r, g, b);
+      (pdf as any).setGState((pdf as any).GState({ opacity }));
+
+      // Calculate text dimensions (approximate)
+      const textWidth = pdf.getTextWidth(watermark.text);
+      const textHeight = fontSize * 0.35; // Approximate height in mm
+
+      // Calculate position
+      let x = pageWidth / 2;
+      let y = pageHeight / 2;
+
+      switch (position) {
+        case 'center':
+        case 'diagonal':
+          x = pageWidth / 2;
+          y = pageHeight / 2;
+          break;
+        case 'top-left':
+          x = textWidth / 2 + 10;
+          y = textHeight / 2 + 10;
+          break;
+        case 'top-right':
+          x = pageWidth - textWidth / 2 - 10;
+          y = textHeight / 2 + 10;
+          break;
+        case 'bottom-left':
+          x = textWidth / 2 + 10;
+          y = pageHeight - textHeight / 2 - 10;
+          break;
+        case 'bottom-right':
+          x = pageWidth - textWidth / 2 - 10;
+          y = pageHeight - textHeight / 2 - 10;
+          break;
+      }
+
+      // Apply rotation and draw text
+      if (rotation !== 0) {
+        pdf.text(watermark.text, x, y, {
+          align: 'center',
+          angle: rotation,
+        });
+      } else {
+        pdf.text(watermark.text, x, y, { align: 'center' });
+      }
+    }
+
+    // Handle image watermark
+    if (watermark.image) {
+      const opacity = watermark.opacity !== undefined ? watermark.opacity : 0.15;
+      const position = watermark.position || 'center';
+
+      try {
+        // Load image - support both data URLs and paths
+        let imageData = watermark.image;
+
+        // If it's a path, we need to load it as data URL
+        if (!watermark.image.startsWith('data:')) {
+          // For now, we'll skip loading external images in the browser context
+          // This would require CORS and async image loading
+          console.warn('External image URLs for watermarks require data URLs. Please convert image to base64.');
+          pdf.restoreGraphicsState();
+          return;
+        }
+
+        // Calculate image dimensions (we'll use a default size)
+        const imgWidth = 50; // mm
+        const imgHeight = 50; // mm
+
+        // Calculate position
+        let x = (pageWidth - imgWidth) / 2;
+        let y = (pageHeight - imgHeight) / 2;
+
+        switch (position) {
+          case 'center':
+          case 'diagonal':
+            x = (pageWidth - imgWidth) / 2;
+            y = (pageHeight - imgHeight) / 2;
+            break;
+          case 'top-left':
+            x = 10;
+            y = 10;
+            break;
+          case 'top-right':
+            x = pageWidth - imgWidth - 10;
+            y = 10;
+            break;
+          case 'bottom-left':
+            x = 10;
+            y = pageHeight - imgHeight - 10;
+            break;
+          case 'bottom-right':
+            x = pageWidth - imgWidth - 10;
+            y = pageHeight - imgHeight - 10;
+            break;
+        }
+
+        // Set opacity
+        (pdf as any).setGState((pdf as any).GState({ opacity }));
+
+        // Add image
+        pdf.addImage(imageData, 'PNG', x, y, imgWidth, imgHeight);
+      } catch (error) {
+        console.error('Failed to add image watermark:', error);
+      }
+    }
+
+    // Restore graphics state
+    pdf.restoreGraphicsState();
   }
 
   /**
