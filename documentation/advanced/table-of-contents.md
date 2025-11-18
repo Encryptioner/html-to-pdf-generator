@@ -1,5 +1,7 @@
 # Table of Contents
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `tocOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 Automatically generate a table of contents (TOC) from your document's headings. This feature scans the HTML content for heading elements (h1-h6) and creates a navigable TOC with clickable links to sections. Perfect for long documents, manuals, reports, and books.

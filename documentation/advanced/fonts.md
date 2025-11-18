@@ -1,5 +1,7 @@
 # Custom Fonts
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `fontOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 The font system allows you to embed custom fonts in your PDF documents, ensuring that text renders with your specified typefaces regardless of what fonts are installed on the user's system. This is essential for maintaining brand consistency and ensuring documents look exactly as designed.

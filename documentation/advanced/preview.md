@@ -1,5 +1,7 @@
 # Real-Time PDF Preview
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `previewOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 The PDFPreview component provides real-time preview functionality, allowing users to see how their document will look as a PDF before final generation. This is especially useful for interactive document builders, form systems, and applications where users customize content.

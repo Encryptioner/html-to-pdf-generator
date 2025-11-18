@@ -1,5 +1,7 @@
 # PDF Security & Encryption
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `securityOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 Protect your PDF documents with encryption and access control. You can set user passwords (to open the document), owner passwords (to modify permissions), and configure specific restrictions on printing, copying, modification, and other operations.

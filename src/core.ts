@@ -266,6 +266,31 @@ export class PDFGenerator {
       compress: this.options.compress,
     });
 
+    // Apply metadata if provided
+    if (this.options.metadata) {
+      const metadata = this.options.metadata;
+      const properties: any = {};
+
+      if (metadata.title) properties.title = metadata.title;
+      if (metadata.author) properties.author = metadata.author;
+      if (metadata.subject) properties.subject = metadata.subject;
+      if (metadata.creator) properties.creator = metadata.creator;
+
+      // Keywords can be array or string
+      if (metadata.keywords) {
+        properties.keywords = Array.isArray(metadata.keywords)
+          ? metadata.keywords.join(', ')
+          : metadata.keywords;
+      }
+
+      // Set creation date
+      if (metadata.creationDate) {
+        properties.creationDate = metadata.creationDate;
+      }
+
+      pdf.setProperties(properties);
+    }
+
     // Calculate dimensions - image width fills the usable page width
     const imgWidth = this.pageConfig.usableWidth;
 
@@ -288,6 +313,9 @@ export class PDFGenerator {
         imgWidth,
         imgHeightMm
       );
+
+      // Apply header/footer callbacks
+      await this.applyHeaderFooter(pdf, 1, 1);
 
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, 1, 1);
@@ -358,6 +386,9 @@ export class PDFGenerator {
         sliceHeightMm
       );
 
+      // Apply header/footer callbacks
+      await this.applyHeaderFooter(pdf, pageNumber, totalPages);
+
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, pageNumber, totalPages);
       }
@@ -390,6 +421,44 @@ export class PDFGenerator {
       pdf.text(text, pageWidth / 2, pageHeight - 5, { align: 'center' });
     } else {
       pdf.text(text, pageWidth / 2, 5, { align: 'center' });
+    }
+  }
+
+  /**
+   * Apply header and footer callbacks (simplified text-based implementation)
+   * Note: For complex HTML headers/footers, use headerTemplate/footerTemplate instead
+   */
+  private async applyHeaderFooter(pdf: jsPDF, pageNumber: number, totalPages: number): Promise<void> {
+    const pageSize = pdf.internal.pageSize;
+    const pageHeight = pageSize.getHeight();
+    const pageWidth = pageSize.getWidth();
+
+    // Apply header callback if provided
+    if (this.options.header) {
+      const headerElement = this.options.header(pageNumber, totalPages);
+      if (headerElement) {
+        // Simple text extraction from element
+        const headerText = headerElement.textContent || headerElement.innerText || '';
+        if (headerText) {
+          pdf.setFontSize(10);
+          pdf.setTextColor(64, 64, 64);
+          pdf.text(headerText, pageWidth / 2, 7, { align: 'center' });
+        }
+      }
+    }
+
+    // Apply footer callback if provided
+    if (this.options.footer) {
+      const footerElement = this.options.footer(pageNumber, totalPages);
+      if (footerElement) {
+        // Simple text extraction from element
+        const footerText = footerElement.textContent || footerElement.innerText || '';
+        if (footerText) {
+          pdf.setFontSize(10);
+          pdf.setTextColor(64, 64, 64);
+          pdf.text(footerText, pageWidth / 2, pageHeight - 7, { align: 'center' });
+        }
+      }
     }
   }
 

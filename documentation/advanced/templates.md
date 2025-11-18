@@ -1,5 +1,7 @@
 # Template System
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `templateOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 The template system allows you to render dynamic HTML content with variable substitution, loops, and conditional logic before PDF generation. This feature is useful for generating personalized documents, reports with variable data, and mail-merge style documents.

@@ -1,5 +1,7 @@
 # Headers & Footers
 
+> **⚠️ IMPLEMENTATION STATUS**: Template-based headers/footers (`headerTemplate`/`footerTemplate`) are **not yet implemented**. Basic header/footer callbacks with text extraction are available. See "Current Implementation" section below.
+
 ## Overview
 
 Add professional headers and footers to your PDF documents with dynamic template support. Headers and footers provide essential information like page numbers, dates, and document titles, creating a polished, document-like appearance.
@@ -10,6 +12,47 @@ Key features:
 - **First Page Control** - Optionally disable headers/footers on first page
 - **Dynamic Height** - Adjustable in millimeters
 - **Per-Page Updates** - Automatically updated for each page
+
+## Current Implementation
+
+Currently, the library supports **basic header/footer callbacks** that extract text content:
+
+```typescript
+const generator = new PDFGenerator();
+const element = document.getElementById('content');
+
+const result = await generator.generatePDF(element, 'document.pdf', {
+  header: (pageNumber: number, totalPages: number) => {
+    const div = document.createElement('div');
+    div.textContent = `Document Title - Page ${pageNumber}`;
+    return div;
+  },
+  footer: (pageNumber: number, totalPages: number) => {
+    const div = document.createElement('div');
+    div.textContent = `Page ${pageNumber} of ${totalPages}`;
+    return div;
+  }
+});
+```
+
+**Limitations:**
+- Only text content is extracted (no HTML styling)
+- Fixed center alignment
+- Fixed font size (10pt)
+
+**For simple page numbers**, use the built-in option:
+```typescript
+const result = await generator.generatePDF(element, 'document.pdf', {
+  showPageNumbers: true,
+  pageNumberPosition: 'footer' // or 'header'
+});
+```
+
+---
+
+## Planned Template System (Not Yet Available)
+
+The following template-based system is planned but not currently functional:
 
 ## Configuration Interface
 

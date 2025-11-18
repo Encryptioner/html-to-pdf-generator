@@ -1,5 +1,7 @@
 # Asynchronous PDF Processing
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `asyncOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 Asynchronous PDF processing enables long-running PDF generation operations to complete in the background while your application remains responsive. Perfect for:

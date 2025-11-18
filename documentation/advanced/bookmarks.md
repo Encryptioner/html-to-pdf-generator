@@ -1,5 +1,7 @@
 # PDF Bookmarks
 
+> **🚧 NOT YET IMPLEMENTED**: This feature is documented for future implementation. The `bookmarkOptions` parameter is defined but not functional. See [FEATURE_IMPLEMENTATION_STATUS.md](../../FEATURE_IMPLEMENTATION_STATUS.md) for details.
+
 ## Overview
 
 PDF bookmarks (also called outlines or navigation pane) provide a hierarchical navigation structure within the PDF document. They appear in the bookmarks panel of PDF readers, allowing users to quickly jump to different sections. Bookmarks can be auto-generated from headings or manually configured.
