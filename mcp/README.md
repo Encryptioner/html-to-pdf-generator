@@ -170,6 +170,11 @@ Generate a single PDF from multiple HTML content items with automatic scaling. E
   - Each item has:
     - `html` (string, required): HTML content for this item
     - `pageCount` (number, required): Target page count (content will be scaled to fit)
+    - `title` (string, optional): Title for this section
+    - `newPage` (boolean, optional): Control page breaks
+      - `true`: Force item to start on a new page
+      - `false`: Allow item to share page with previous content
+      - `undefined` (default): Add page break after each item
 - `outputPath` (string, required): Absolute path for the output PDF
 - `options` (object, optional): Same PDF options as `generate_pdf`
 
@@ -180,11 +185,15 @@ Generate a single PDF from multiple HTML content items with automatic scaling. E
   "items": [
     {
       "html": "<h1>Section 1: Executive Summary</h1><p>Long content...</p>",
-      "pageCount": 2
+      "pageCount": 2,
+      "title": "Executive Summary",
+      "newPage": true
     },
     {
       "html": "<h1>Section 2: Details</h1><p>More content...</p>",
-      "pageCount": 3
+      "pageCount": 3,
+      "title": "Details",
+      "newPage": true
     }
   ],
   "outputPath": "/tmp/report.pdf",

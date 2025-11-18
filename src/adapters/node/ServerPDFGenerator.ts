@@ -185,14 +185,15 @@ export class ServerPDFGenerator {
       const totalPages = await this.getPageCount(pdfBuffer);
 
       return {
-        pageCount: totalPages,
+        totalPages,
         fileSize: pdfBuffer.length,
         generationTime: Math.round(generationTime),
         items: items.map((item, index) => ({
-          index,
+          title: undefined,
           pageCount: item.pageCount || 1,
           startPage: index + 1,
           endPage: index + 1,
+          scaleFactor: 1.0,
         })),
         blob: new Blob([pdfBuffer], { type: 'application/pdf' }),
       };

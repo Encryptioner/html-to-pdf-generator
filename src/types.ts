@@ -509,25 +509,55 @@ export interface PDFRenderContext {
  * Content item for batch PDF generation
  */
 export interface PDFContentItem {
-  /** HTML element or HTML string to render */
+  /** HTML content as element or string */
   content: HTMLElement | string;
 
-  /** Number of pages this content should occupy */
+  /** Target number of pages for this item */
   pageCount: number;
 
-  /** Optional page break behavior after this item */
-  pageBreakAfter?: boolean;
+  /** Optional title for this section */
+  title?: string;
+
+  /**
+   * Force this item to start on a new page
+   * - true: Item starts on a new page (adds page break before)
+   * - false: Item can share page with previous content (no forced page break)
+   * - undefined: Default behavior (adds page break after each item)
+   */
+  newPage?: boolean;
 }
 
 /**
  * Result from batch PDF generation
  */
-export interface BatchPDFGenerationResult extends PDFGenerationResult {
-  /** Individual item results */
+export interface BatchPDFGenerationResult {
+  /** Generated PDF blob */
+  blob: Blob;
+
+  /** Total number of pages across all items */
+  totalPages: number;
+
+  /** File size in bytes */
+  fileSize: number;
+
+  /** Total generation time in milliseconds */
+  generationTime: number;
+
+  /** Per-item statistics */
   items: Array<{
-    index: number;
-    pageCount: number;
+    /** Title if provided */
+    title?: string;
+
+    /** Starting page number (1-indexed) */
     startPage: number;
+
+    /** Ending page number (1-indexed) */
     endPage: number;
+
+    /** Actual page count for this item */
+    pageCount: number;
+
+    /** Scale factor applied to fit target pages */
+    scaleFactor: number;
   }>;
 }
