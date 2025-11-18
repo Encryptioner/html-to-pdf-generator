@@ -645,6 +645,24 @@ export async function generateBatchPDFBlob(
     throw new Error('Batch PDF generation currently requires a browser environment');
   }
 
+  // Prepare options with progress callback and defaults
+  const progressCallback = options.onProgress;
+  const mergedOptions: Required<PDFGeneratorOptions> = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+    onProgress: (progress: number) => {
+      progressCallback?.(progress);
+    },
+    colorReplacements: {
+      ...TAILWIND_COLOR_REPLACEMENTS,
+      ...options.colorReplacements,
+    },
+  };
+
+  // Calculate page height in pixels for page break logic
+  const pageConfig = calculatePageConfig(mergedOptions);
+  const pageHeightPx = pageConfig.heightPx;
+
   // Create a container for all content items
   const container = document.createElement('div');
   container.style.position = 'absolute';
@@ -657,6 +675,9 @@ export async function generateBatchPDFBlob(
   const itemMetadata: Array<{ title?: string; element: HTMLElement }> = [];
 
   try {
+
+    let cumulativeHeight = 0;
+
     // Process each content item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
@@ -671,39 +692,54 @@ export async function generateBatchPDFBlob(
         tempElements.push(element);
       }
 
+      // Append to container first to measure height
+      container.appendChild(element);
+
+      // Wait for layout
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+      // Get the element's height
+      const elementHeight = element.scrollHeight;
+
       // Handle page breaks based on newPage parameter
       if (item.newPage === true && i > 0) {
-        // Force this item to start on a new page (add page break before)
-        element.style.pageBreakBefore = 'always';
+        // Force this item to start on a new page
+        // Calculate how much space is left on current page
+        const currentPagePosition = cumulativeHeight % pageHeightPx;
+
+        if (currentPagePosition > 0) {
+          // Add margin to push to next page
+          const marginNeeded = pageHeightPx - currentPagePosition;
+          element.style.marginTop = `${marginNeeded}px`;
+          cumulativeHeight += marginNeeded;
+        }
       } else if (item.newPage === false) {
         // Allow item to share page with previous content (no forced page break)
-        // Don't add any page break
+        // No additional margin needed
       } else if (item.newPage === undefined) {
         // Default behavior: add page break after each item (except the last one)
         if (i < items.length - 1) {
-          element.style.pageBreakAfter = 'always';
+          // Calculate margin to push next item to new page
+          const currentPagePosition = (cumulativeHeight + elementHeight) % pageHeightPx;
+
+          if (currentPagePosition > 0) {
+            const marginNeeded = pageHeightPx - currentPagePosition;
+            element.style.marginBottom = `${marginNeeded}px`;
+            cumulativeHeight += marginNeeded;
+          }
         }
       }
 
+      cumulativeHeight += elementHeight;
       itemMetadata.push({ title: item.title, element });
-      container.appendChild(element);
     }
 
     // Load external styles if any
     await loadExternalStyles(container);
     await new Promise(resolve => setTimeout(resolve, 200));
 
-    // Track progress
-    const progressCallback = options.onProgress;
-    const wrappedOptions = {
-      ...options,
-      onProgress: (progress: number) => {
-        progressCallback?.(progress);
-      },
-    };
-
     // Generate the PDF using the combined container
-    const generator = new PDFGenerator(wrappedOptions);
+    const generator = new PDFGenerator(mergedOptions);
     const blob = await generator.generateBlob(container);
 
     // For now, we don't have accurate per-item page tracking without accessing internal PDF structure
