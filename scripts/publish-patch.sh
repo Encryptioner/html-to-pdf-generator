@@ -44,11 +44,7 @@ echo "Step 2: Committing version bump..."
 git add package.json
 git commit -m "chore: bump version to $NEW_VERSION
 
-Patch release with workflow fixes and improvements.
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>"
+Patch release with workflow fixes and improvements."
 
 echo "Step 3: Deleting old v$CURRENT_VERSION tag if it exists..."
 git tag -d "v$CURRENT_VERSION" 2>/dev/null || echo "  (no local tag to delete)"
