@@ -39,6 +39,15 @@ export class PDFGenerator {
   private pageConfig: PDFPageConfig;
   private styleElement: HTMLStyleElement | null = null;
 
+  // Preview-related properties
+  private previewContainer: HTMLElement | null = null;
+  private previewIframe: HTMLIFrameElement | null = null;
+  private previewBlobUrl: string | null = null;
+  private mutationObserver: MutationObserver | null = null;
+  private debounceTimer: number | null = null;
+  private isPreviewActive: boolean = false;
+  private previewTargetElement: HTMLElement | null = null;
+
   constructor(options: Partial<PDFGeneratorOptions> = {}) {
     // Merge with defaults
     this.options = { ...DEFAULT_OPTIONS, ...options };
@@ -174,11 +183,42 @@ export class PDFGenerator {
     document.body.appendChild(container);
 
     // Inject custom CSS for color replacements
-    const css = [
+    const cssParts = [
       generateColorReplacementCSS(this.options.colorReplacements, 'pdf-render-target'),
       this.options.customCSS,
-    ].join('\n\n');
+    ];
 
+    // Add media type emulation if set to 'print'
+    if (this.options.emulateMediaType === 'print') {
+      // Collect all @media print rules from stylesheets
+      const printStyles: string[] = [];
+
+      try {
+        for (let i = 0; i < document.styleSheets.length; i++) {
+          const sheet = document.styleSheets[i];
+          try {
+            const rules = sheet.cssRules || sheet.rules;
+            for (let j = 0; j < rules.length; j++) {
+              const rule = rules[j];
+              if (rule instanceof CSSMediaRule && rule.media.mediaText.includes('print')) {
+                // Extract rules inside @media print and apply them directly
+                printStyles.push(rule.cssText.replace('@media print', '').replace(/^\s*{\s*/, '').replace(/}\s*$/, ''));
+              }
+            }
+          } catch (e) {
+            // Skip stylesheets we can't access (CORS)
+          }
+        }
+      } catch (e) {
+        console.warn('Could not extract @media print styles:', e);
+      }
+
+      if (printStyles.length > 0) {
+        cssParts.push(`/* Emulated @media print styles */\n${printStyles.join('\n')}`);
+      }
+    }
+
+    const css = cssParts.join('\n\n');
     this.styleElement = createStyleElement(css, 'pdf-color-override');
     document.head.appendChild(this.styleElement);
 
@@ -249,6 +289,62 @@ export class PDFGenerator {
   }
 
   /**
+   * Build encryption options for jsPDF from security configuration
+   */
+  private buildEncryptionOptions(): any {
+    const security = this.options.securityOptions;
+
+    if (!security || !security.enabled) {
+      return undefined;
+    }
+
+    const userPermissions: string[] = [];
+
+    // Map permissions to jsPDF format
+    if (security.permissions) {
+      const perms = security.permissions;
+
+      // Print permission
+      if (perms.printing && perms.printing !== 'none') {
+        userPermissions.push('print');
+      }
+
+      // Modify permission
+      if (perms.modifying) {
+        userPermissions.push('modify');
+      }
+
+      // Copy permission
+      if (perms.copying) {
+        userPermissions.push('copy');
+      }
+
+      // Annotation/forms permission
+      if (perms.annotating || perms.fillingForms) {
+        userPermissions.push('annot-forms');
+      }
+    } else {
+      // Default permissions if not specified
+      userPermissions.push('print', 'copy');
+    }
+
+    const encryption: any = {
+      userPermissions,
+    };
+
+    // Add passwords if provided
+    if (security.userPassword) {
+      encryption.userPassword = security.userPassword;
+    }
+
+    if (security.ownerPassword) {
+      encryption.ownerPassword = security.ownerPassword;
+    }
+
+    return encryption;
+  }
+
+  /**
    * Create PDF from canvas with intelligent multi-page pagination
    * Similar to GoFullPage - captures full content and splits into pages naturally
    */
@@ -258,13 +354,47 @@ export class PDFGenerator {
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
 
-    // Create PDF
-    const pdf = new jsPDF({
+    // Build PDF options
+    const pdfOptions: any = {
       orientation: this.options.orientation,
       unit: 'mm',
       format: this.options.format,
       compress: this.options.compress,
-    });
+    };
+
+    // Add encryption if security is enabled
+    const encryption = this.buildEncryptionOptions();
+    if (encryption) {
+      pdfOptions.encryption = encryption;
+    }
+
+    // Create PDF
+    const pdf = new jsPDF(pdfOptions);
+
+    // Apply metadata if provided
+    if (this.options.metadata) {
+      const metadata = this.options.metadata;
+      const properties: any = {};
+
+      if (metadata.title) properties.title = metadata.title;
+      if (metadata.author) properties.author = metadata.author;
+      if (metadata.subject) properties.subject = metadata.subject;
+      if (metadata.creator) properties.creator = metadata.creator;
+
+      // Keywords can be array or string
+      if (metadata.keywords) {
+        properties.keywords = Array.isArray(metadata.keywords)
+          ? metadata.keywords.join(', ')
+          : metadata.keywords;
+      }
+
+      // Set creation date
+      if (metadata.creationDate) {
+        properties.creationDate = metadata.creationDate;
+      }
+
+      pdf.setProperties(properties);
+    }
 
     // Calculate dimensions - image width fills the usable page width
     const imgWidth = this.pageConfig.usableWidth;
@@ -289,9 +419,15 @@ export class PDFGenerator {
         imgHeightMm
       );
 
+      // Apply header/footer callbacks
+      await this.applyHeaderFooter(pdf, 1, 1);
+
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, 1, 1);
       }
+
+      // Apply watermark to page
+      await this.applyWatermark(pdf);
 
       return pdf;
     }
@@ -355,9 +491,15 @@ export class PDFGenerator {
         sliceHeightMm
       );
 
+      // Apply header/footer callbacks
+      await this.applyHeaderFooter(pdf, pageNumber, totalPages);
+
       if (this.options.showPageNumbers) {
         this.addPageNumber(pdf, pageNumber, totalPages);
       }
+
+      // Apply watermark to page
+      await this.applyWatermark(pdf);
 
       // Move to next slice
       currentY += sliceHeight;
@@ -385,6 +527,323 @@ export class PDFGenerator {
     } else {
       pdf.text(text, pageWidth / 2, 5, { align: 'center' });
     }
+  }
+
+  /**
+   * Render template string with variable substitution
+   */
+  private renderTemplate(
+    template: string,
+    variables: {
+      pageNumber: number;
+      totalPages: number;
+      date?: string;
+      title?: string;
+    }
+  ): string {
+    let rendered = template;
+
+    rendered = rendered.replace(/\{\{pageNumber\}\}/g, String(variables.pageNumber));
+    rendered = rendered.replace(/\{\{totalPages\}\}/g, String(variables.totalPages));
+    rendered = rendered.replace(/\{\{date\}\}/g, variables.date || new Date().toLocaleDateString());
+    rendered = rendered.replace(/\{\{title\}\}/g, variables.title || '');
+
+    return rendered;
+  }
+
+  /**
+   * Apply header and footer templates or callbacks
+   */
+  private async applyHeaderFooter(pdf: jsPDF, pageNumber: number, totalPages: number): Promise<void> {
+    const pageSize = pdf.internal.pageSize;
+    const pageHeight = pageSize.getHeight();
+    const pageWidth = pageSize.getWidth();
+    const [marginTop, marginRight, marginBottom, marginLeft] = this.options.margins;
+
+    // Apply headerTemplate if provided
+    if (this.options.headerTemplate && this.options.headerTemplate.template) {
+      const template = this.options.headerTemplate;
+      const templateString = template.template!; // Non-null assertion - checked above
+
+      // Skip first page if requested
+      if (pageNumber === 1 && template.firstPage === false) {
+        // Don't render on first page
+      } else {
+        const height = template.height || 15; // mm
+        const heightPx = height * 3.7795; // Convert mm to pixels
+
+        // Render template with variables
+        const html = this.renderTemplate(templateString, {
+          pageNumber,
+          totalPages,
+          date: new Date().toLocaleDateString(),
+          title: this.options.metadata?.title || ''
+        });
+
+        // Create temporary element
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = `${this.pageConfig.widthPx}px`;
+        container.style.height = `${heightPx}px`;
+        container.style.overflow = 'hidden';
+
+        // Apply custom CSS if provided
+        if (template.css) {
+          container.style.cssText += template.css;
+        }
+
+        document.body.appendChild(container);
+
+        try {
+          // Render to canvas
+          const canvas = await html2canvas(container, {
+            scale: 1,
+            backgroundColor: null,
+            logging: false,
+          });
+
+          // Add to PDF
+          const imgData = canvas.toDataURL('image/png');
+          pdf.addImage(imgData, 'PNG', marginLeft, marginTop, this.pageConfig.usableWidth, height);
+        } catch (error) {
+          console.error('Failed to render header template:', error);
+        } finally {
+          document.body.removeChild(container);
+        }
+      }
+    }
+    // Fallback to header callback
+    else if (this.options.header) {
+      const headerElement = this.options.header(pageNumber, totalPages);
+      if (headerElement) {
+        const headerText = headerElement.textContent || headerElement.innerText || '';
+        if (headerText) {
+          pdf.setFontSize(10);
+          pdf.setTextColor(64, 64, 64);
+          pdf.text(headerText, pageWidth / 2, 7, { align: 'center' });
+        }
+      }
+    }
+
+    // Apply footerTemplate if provided
+    if (this.options.footerTemplate && this.options.footerTemplate.template) {
+      const template = this.options.footerTemplate;
+      const templateString = template.template!; // Non-null assertion - checked above
+
+      // Skip first page if requested
+      if (pageNumber === 1 && template.firstPage === false) {
+        // Don't render on first page
+      } else {
+        const height = template.height || 15; // mm
+        const heightPx = height * 3.7795; // Convert mm to pixels
+
+        // Render template with variables
+        const html = this.renderTemplate(templateString, {
+          pageNumber,
+          totalPages,
+          date: new Date().toLocaleDateString(),
+          title: this.options.metadata?.title || ''
+        });
+
+        // Create temporary element
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.style.width = `${this.pageConfig.widthPx}px`;
+        container.style.height = `${heightPx}px`;
+        container.style.overflow = 'hidden';
+
+        // Apply custom CSS if provided
+        if (template.css) {
+          container.style.cssText += template.css;
+        }
+
+        document.body.appendChild(container);
+
+        try {
+          // Render to canvas
+          const canvas = await html2canvas(container, {
+            scale: 1,
+            backgroundColor: null,
+            logging: false,
+          });
+
+          // Add to PDF
+          const imgData = canvas.toDataURL('image/png');
+          const yPosition = pageHeight - marginBottom - height;
+          pdf.addImage(imgData, 'PNG', marginLeft, yPosition, this.pageConfig.usableWidth, height);
+        } catch (error) {
+          console.error('Failed to render footer template:', error);
+        } finally {
+          document.body.removeChild(container);
+        }
+      }
+    }
+    // Fallback to footer callback
+    else if (this.options.footer) {
+      const footerElement = this.options.footer(pageNumber, totalPages);
+      if (footerElement) {
+        const footerText = footerElement.textContent || footerElement.innerText || '';
+        if (footerText) {
+          pdf.setFontSize(10);
+          pdf.setTextColor(64, 64, 64);
+          pdf.text(footerText, pageWidth / 2, pageHeight - 7, { align: 'center' });
+        }
+      }
+    }
+  }
+
+  /**
+   * Apply watermark to current PDF page
+   */
+  private async applyWatermark(pdf: jsPDF): Promise<void> {
+    const watermark = this.options.watermark;
+
+    // Skip if no watermark configured
+    if (!watermark || (!watermark.text && !watermark.image)) {
+      return;
+    }
+
+    const pageSize = pdf.internal.pageSize;
+    const pageHeight = pageSize.getHeight();
+    const pageWidth = pageSize.getWidth();
+
+    // Save current graphics state
+    pdf.saveGraphicsState();
+
+    // Handle text watermark
+    if (watermark.text) {
+      const fontSize = watermark.fontSize || 48;
+      const opacity = watermark.opacity !== undefined ? watermark.opacity : 0.1;
+      const color = watermark.color || '#cccccc';
+      const position = watermark.position || 'diagonal';
+      const rotation = watermark.rotation !== undefined
+        ? watermark.rotation
+        : (position === 'diagonal' ? 45 : 0);
+
+      // Set text properties
+      pdf.setFontSize(fontSize);
+
+      // Parse color (support hex and rgb)
+      let r = 204, g = 204, b = 204; // Default gray
+      if (color.startsWith('#')) {
+        const hex = color.substring(1);
+        r = parseInt(hex.substring(0, 2), 16);
+        g = parseInt(hex.substring(2, 4), 16);
+        b = parseInt(hex.substring(4, 6), 16);
+      }
+
+      pdf.setTextColor(r, g, b);
+      (pdf as any).setGState((pdf as any).GState({ opacity }));
+
+      // Calculate text dimensions (approximate)
+      const textWidth = pdf.getTextWidth(watermark.text);
+      const textHeight = fontSize * 0.35; // Approximate height in mm
+
+      // Calculate position
+      let x = pageWidth / 2;
+      let y = pageHeight / 2;
+
+      switch (position) {
+        case 'center':
+        case 'diagonal':
+          x = pageWidth / 2;
+          y = pageHeight / 2;
+          break;
+        case 'top-left':
+          x = textWidth / 2 + 10;
+          y = textHeight / 2 + 10;
+          break;
+        case 'top-right':
+          x = pageWidth - textWidth / 2 - 10;
+          y = textHeight / 2 + 10;
+          break;
+        case 'bottom-left':
+          x = textWidth / 2 + 10;
+          y = pageHeight - textHeight / 2 - 10;
+          break;
+        case 'bottom-right':
+          x = pageWidth - textWidth / 2 - 10;
+          y = pageHeight - textHeight / 2 - 10;
+          break;
+      }
+
+      // Apply rotation and draw text
+      if (rotation !== 0) {
+        pdf.text(watermark.text, x, y, {
+          align: 'center',
+          angle: rotation,
+        });
+      } else {
+        pdf.text(watermark.text, x, y, { align: 'center' });
+      }
+    }
+
+    // Handle image watermark
+    if (watermark.image) {
+      const opacity = watermark.opacity !== undefined ? watermark.opacity : 0.15;
+      const position = watermark.position || 'center';
+
+      try {
+        // Load image - support both data URLs and paths
+        let imageData = watermark.image;
+
+        // If it's a path, we need to load it as data URL
+        if (!watermark.image.startsWith('data:')) {
+          // For now, we'll skip loading external images in the browser context
+          // This would require CORS and async image loading
+          console.warn('External image URLs for watermarks require data URLs. Please convert image to base64.');
+          pdf.restoreGraphicsState();
+          return;
+        }
+
+        // Calculate image dimensions (we'll use a default size)
+        const imgWidth = 50; // mm
+        const imgHeight = 50; // mm
+
+        // Calculate position
+        let x = (pageWidth - imgWidth) / 2;
+        let y = (pageHeight - imgHeight) / 2;
+
+        switch (position) {
+          case 'center':
+          case 'diagonal':
+            x = (pageWidth - imgWidth) / 2;
+            y = (pageHeight - imgHeight) / 2;
+            break;
+          case 'top-left':
+            x = 10;
+            y = 10;
+            break;
+          case 'top-right':
+            x = pageWidth - imgWidth - 10;
+            y = 10;
+            break;
+          case 'bottom-left':
+            x = 10;
+            y = pageHeight - imgHeight - 10;
+            break;
+          case 'bottom-right':
+            x = pageWidth - imgWidth - 10;
+            y = pageHeight - imgHeight - 10;
+            break;
+        }
+
+        // Set opacity
+        (pdf as any).setGState((pdf as any).GState({ opacity }));
+
+        // Add image
+        pdf.addImage(imageData, 'PNG', x, y, imgWidth, imgHeight);
+      } catch (error) {
+        console.error('Failed to add image watermark:', error);
+      }
+    }
+
+    // Restore graphics state
+    pdf.restoreGraphicsState();
   }
 
   /**
@@ -430,6 +889,209 @@ export class PDFGenerator {
       options: this.options,
       pageConfig: this.pageConfig,
     };
+  }
+
+  /**
+   * Start PDF preview
+   * Generates a live preview of the PDF in a container element
+   */
+  async startPreview(element: HTMLElement): Promise<void> {
+    if (!this.options.previewOptions) {
+      throw new Error('Preview options must be configured to use preview feature');
+    }
+
+    const previewOptions = this.options.previewOptions;
+
+    // Get or create preview container
+    if (previewOptions.containerId) {
+      const container = document.getElementById(previewOptions.containerId);
+      if (!container) {
+        throw new Error(`Preview container with id "${previewOptions.containerId}" not found`);
+      }
+      this.previewContainer = container;
+    } else {
+      throw new Error('Preview container ID must be specified in previewOptions.containerId');
+    }
+
+    // Store target element
+    this.previewTargetElement = element;
+    this.isPreviewActive = true;
+
+    // Setup iframe container
+    this.setupPreviewIframe();
+
+    // Generate initial preview
+    await this.updatePreview();
+
+    // Setup live updates if enabled
+    if (previewOptions.liveUpdate) {
+      this.setupLiveUpdates(element);
+    }
+  }
+
+  /**
+   * Stop PDF preview and cleanup resources
+   */
+  stopPreview(): void {
+    this.isPreviewActive = false;
+
+    // Disconnect mutation observer
+    if (this.mutationObserver) {
+      this.mutationObserver.disconnect();
+      this.mutationObserver = null;
+    }
+
+    // Clear debounce timer
+    if (this.debounceTimer !== null) {
+      clearTimeout(this.debounceTimer);
+      this.debounceTimer = null;
+    }
+
+    // Revoke blob URL to free memory
+    if (this.previewBlobUrl) {
+      URL.revokeObjectURL(this.previewBlobUrl);
+      this.previewBlobUrl = null;
+    }
+
+    // Remove iframe
+    if (this.previewIframe && this.previewIframe.parentNode) {
+      this.previewIframe.parentNode.removeChild(this.previewIframe);
+      this.previewIframe = null;
+    }
+
+    this.previewContainer = null;
+    this.previewTargetElement = null;
+  }
+
+  /**
+   * Manually update the preview
+   */
+  async updatePreview(): Promise<void> {
+    if (!this.isPreviewActive || !this.previewTargetElement) {
+      return;
+    }
+
+    try {
+      // Generate PDF blob
+      const blob = await this.generatePreviewBlob(this.previewTargetElement);
+
+      // Display in iframe
+      this.displayPreview(blob);
+    } catch (error) {
+      console.error('Failed to update preview:', error);
+      this.options.onError(error as Error);
+    }
+  }
+
+  /**
+   * Setup preview iframe in container
+   */
+  private setupPreviewIframe(): void {
+    if (!this.previewContainer) {
+      return;
+    }
+
+    // Create iframe
+    this.previewIframe = document.createElement('iframe');
+    this.previewIframe.style.width = '100%';
+    this.previewIframe.style.height = '100%';
+    this.previewIframe.style.border = 'none';
+    this.previewIframe.title = 'PDF Preview';
+
+    // Clear container and add iframe
+    this.previewContainer.innerHTML = '';
+    this.previewContainer.appendChild(this.previewIframe);
+  }
+
+  /**
+   * Generate PDF blob for preview (without downloading)
+   */
+  private async generatePreviewBlob(element: HTMLElement): Promise<Blob> {
+    // Use preview-specific options if provided
+    const previewOptions = this.options.previewOptions;
+    const originalScale = this.options.scale;
+    const originalQuality = this.options.imageQuality;
+
+    // Apply preview quality/scale overrides
+    if (previewOptions?.scale !== undefined) {
+      this.options.scale = previewOptions.scale;
+    } else {
+      // Default to lower quality for faster preview
+      this.options.scale = 1;
+    }
+
+    if (previewOptions?.quality !== undefined) {
+      this.options.imageQuality = previewOptions.quality;
+    } else {
+      // Default to lower quality for faster preview
+      this.options.imageQuality = 0.7;
+    }
+
+    try {
+      // Generate blob using existing generateBlob method
+      const blob = await this.generateBlob(element);
+      return blob;
+    } finally {
+      // Restore original options
+      this.options.scale = originalScale;
+      this.options.imageQuality = originalQuality;
+    }
+  }
+
+  /**
+   * Display PDF blob in preview iframe
+   */
+  private displayPreview(blob: Blob): void {
+    if (!this.previewIframe) {
+      return;
+    }
+
+    // Revoke old blob URL
+    if (this.previewBlobUrl) {
+      URL.revokeObjectURL(this.previewBlobUrl);
+    }
+
+    // Create new blob URL
+    this.previewBlobUrl = URL.createObjectURL(blob);
+
+    // Set iframe source
+    this.previewIframe.src = this.previewBlobUrl;
+  }
+
+  /**
+   * Setup live updates using MutationObserver
+   */
+  private setupLiveUpdates(element: HTMLElement): void {
+    const previewOptions = this.options.previewOptions;
+    const debounceDelay = previewOptions?.debounce ?? 500;
+
+    // Create mutation observer
+    this.mutationObserver = new MutationObserver(() => {
+      // Clear existing timer
+      if (this.debounceTimer !== null) {
+        clearTimeout(this.debounceTimer);
+      }
+
+      // Set new timer
+      this.debounceTimer = window.setTimeout(() => {
+        this.updatePreview();
+      }, debounceDelay);
+    });
+
+    // Observe changes
+    this.mutationObserver.observe(element, {
+      attributes: true,
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  }
+
+  /**
+   * Check if preview is currently active
+   */
+  isPreviewRunning(): boolean {
+    return this.isPreviewActive;
   }
 }
 
