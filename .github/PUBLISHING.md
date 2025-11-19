@@ -615,7 +615,25 @@ git push origin v1.0.0 --force # Force push to remote
 - **"Dependencies lock file not found"** → Commit pnpm-lock.yaml
 - **"Version mismatch"** → Update package.json version to match tag
 - **"Repository URL mismatch"** → Ensure repository URL in package.json matches GitHub (case-sensitive)
+- **"Cannot publish over previously published version"** → Bump to next patch version using `./scripts/publish-patch.sh`
+- **"Resource not accessible by integration" (403)** → Workflow needs `contents: write` permission
 - **ESLint errors** → Fix linting issues or temporarily disable linter in workflow
+
+### Quick Fix Script
+
+For common scenarios like needing to republish with fixes, use the helper script:
+
+```bash
+./scripts/publish-patch.sh
+```
+
+This script handles:
+- Version bumping
+- Tag management
+- Committing and pushing
+- Triggering the publish workflow
+
+See `scripts/README.md` for details.
 
 ## Support
 
