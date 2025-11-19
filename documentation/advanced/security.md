@@ -1,21 +1,261 @@
 # PDF Security & Encryption
 
+Add password protection and permission controls to your generated PDFs.
+
 ## Overview
 
-Protect your PDF documents with encryption and access control. You can set user passwords (to open the document), owner passwords (to modify permissions), and configure specific restrictions on printing, copying, modification, and other operations.
+The HTML to PDF Generator supports PDF encryption and access control using jsPDF's built-in security features. You can:
 
-Key features:
-- **User Password** - Required to open the document
-- **Owner Password** - Required to change permissions
-- **Document Permissions** - Control printing, copying, modifying
-- **Encryption Strength** - 128-bit or 256-bit encryption
-- **Granular Control** - Fine-grained permission management
+- Password protect PDFs (user and owner passwords)
+- Control document permissions (printing, copying, modifying, etc.)
+- Restrict access to sensitive documents
 
-## Configuration Interface
+## Important Notes
+
+### Encryption Strength
+
+jsPDF uses **RC4 40-bit encryption**, which is considered weak by modern security standards. While this provides basic protection against casual access, it should **not be relied upon for highly sensitive documents**.
+
+For stronger encryption (AES 128/256), consider server-side solutions like:
+- node-qpdf
+- PDFtk
+- Apache PDFBox
+
+### Password Types
+
+1. **User Password**: Required to open the PDF
+2. **Owner Password**: Required to change permissions
+
+If only the user password is set, the PDF can be opened but permissions cannot be modified. If both are set, the owner password allows full access and permission changes.
+
+## Basic Usage
+
+### Password Protection Only
 
 ```typescript
-export interface PDFSecurityPermissions {
-  /** Allow printing */
+import { PDFGenerator } from '@encryptioner/html-to-pdf-generator';
+
+const generator = new PDFGenerator({
+  securityOptions: {
+    enabled: true,
+    userPassword: 'my-secret-password',
+    ownerPassword: 'admin-password'
+  }
+});
+
+await generator.generatePDF(element, 'protected.pdf');
+```
+
+### Permission Controls
+
+```typescript
+const generator = new PDFGenerator({
+  securityOptions: {
+    enabled: true,
+    userPassword: 'view-only',
+    permissions: {
+      printing: 'none',        // Disable printing
+      modifying: false,        // Disable modifications
+      copying: false,          // Disable text/content copying
+      annotating: false,       // Disable annotations
+      fillingForms: false      // Disable form filling
+    }
+  }
+});
+```
+
+### Allow Printing Only
+
+```typescript
+const generator = new PDFGenerator({
+  securityOptions: {
+    enabled: true,
+    userPassword: 'print-only',
+    permissions: {
+      printing: 'highResolution',  // Allow high-quality printing
+      modifying: false,
+      copying: false,
+      annotating: false
+    }
+  }
+});
+```
+
+## Framework Examples
+
+### React
+
+```tsx
+import { usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/react';
+
+function SecureDocument() {
+  const { generatePDF, isGenerating } = usePDFGeneratorManual({
+    securityOptions: {
+      enabled: true,
+      userPassword: 'secret123',
+      ownerPassword: 'admin123',
+      permissions: {
+        printing: 'lowResolution',
+        modifying: false,
+        copying: true,          // Allow copying
+        annotating: false
+      }
+    }
+  });
+
+  const handleDownload = async () => {
+    const element = document.getElementById('invoice');
+    if (element) {
+      await generatePDF(element as HTMLElement, 'secure-invoice.pdf');
+    }
+  };
+
+  return (
+    <div>
+      <div id="invoice">
+        {/* Your invoice content */}
+      </div>
+      <button onClick={handleDownload} disabled={isGenerating}>
+        Download Protected PDF
+      </button>
+    </div>
+  );
+}
+```
+
+### Vue
+
+```vue
+<script setup lang="ts">
+import { usePDFGeneratorManual } from '@encryptioner/html-to-pdf-generator/vue';
+import { ref } from 'vue';
+
+const contentRef = ref<HTMLElement | null>(null);
+
+const { generatePDF, isGenerating } = usePDFGeneratorManual({
+  securityOptions: {
+    enabled: true,
+    userPassword: 'confidential',
+    permissions: {
+      printing: 'none',
+      copying: false,
+      modifying: false
+    }
+  }
+});
+
+async function downloadSecurePDF() {
+  if (contentRef.value) {
+    await generatePDF(contentRef.value, 'confidential-report.pdf');
+  }
+}
+</script>
+
+<template>
+  <div>
+    <div ref="contentRef">
+      <!-- Your content -->
+    </div>
+    <button @click="downloadSecurePDF" :disabled="isGenerating">
+      Download Secure PDF
+    </button>
+  </div>
+</template>
+```
+
+### Svelte
+
+```svelte
+<script lang="ts">
+  import { PDFGeneratorStore } from '@encryptioner/html-to-pdf-generator/svelte';
+
+  let contentElement: HTMLElement;
+
+  const pdfStore = new PDFGeneratorStore({
+    securityOptions: {
+      enabled: true,
+      userPassword: 'secret',
+      ownerPassword: 'master',
+      permissions: {
+        printing: 'highResolution',
+        copying: false,
+        modifying: false,
+        annotating: false
+      }
+    }
+  });
+
+  async function download() {
+    await pdfStore.generatePDF(contentElement, 'secure-document.pdf');
+  }
+</script>
+
+<div bind:this={contentElement}>
+  <!-- Your content -->
+</div>
+
+<button on:click={download} disabled={$pdfStore.isGenerating}>
+  Download Protected PDF
+</button>
+```
+
+### Server-Side (Node.js)
+
+```typescript
+import { generatePDFFromURL } from '@encryptioner/html-to-pdf-generator/node';
+
+const pdfBuffer = await generatePDFFromURL('https://example.com', {
+  securityOptions: {
+    enabled: true,
+    userPassword: 'secure123',
+    ownerPassword: 'admin456',
+    permissions: {
+      printing: 'lowResolution',
+      modifying: false,
+      copying: false,
+      annotating: false,
+      fillingForms: false
+    }
+  }
+});
+
+// Save to file
+await fs.promises.writeFile('protected.pdf', pdfBuffer);
+```
+
+## API Reference
+
+### PDFSecurityOptions
+
+```typescript
+interface PDFSecurityOptions {
+  /** Enable encryption (must be true to activate security) */
+  enabled?: boolean;
+
+  /** User password (required to open the PDF) */
+  userPassword?: string;
+
+  /** Owner password (required to modify permissions) */
+  ownerPassword?: string;
+
+  /** Document permissions */
+  permissions?: PDFSecurityPermissions;
+
+  /** Encryption strength (currently only RC4 40-bit supported by jsPDF) */
+  encryptionStrength?: 128 | 256;
+}
+```
+
+### PDFSecurityPermissions
+
+```typescript
+interface PDFSecurityPermissions {
+  /**
+   * Allow printing
+   * - 'none': No printing allowed
+   * - 'lowResolution': Low resolution printing only
+   * - 'highResolution': Full quality printing
+   */
   printing?: 'none' | 'lowResolution' | 'highResolution';
 
   /** Allow modifying the document */
@@ -30,368 +270,283 @@ export interface PDFSecurityPermissions {
   /** Allow filling in form fields */
   fillingForms?: boolean;
 
-  /** Allow content accessibility */
+  /** Allow content accessibility (for screen readers) */
   contentAccessibility?: boolean;
 
-  /** Allow assembling document */
+  /** Allow assembling document (inserting, rotating, deleting pages) */
   documentAssembly?: boolean;
 }
+```
 
-export interface PDFSecurityOptions {
-  /** Enable encryption */
-  enabled?: boolean;
+## Permission Combinations
 
-  /** User password (required to open the PDF) */
-  userPassword?: string;
+### Read-Only PDF
 
-  /** Owner password (required to modify permissions) */
-  ownerPassword?: string;
-
-  /** Document permissions */
-  permissions?: PDFSecurityPermissions;
-
-  /** Encryption strength (128 or 256 bit) */
-  encryptionStrength?: 128 | 256;
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'readonly',
+  permissions: {
+    printing: 'none',
+    modifying: false,
+    copying: false,
+    annotating: false,
+    fillingForms: false
+  }
 }
 ```
 
-## Basic Usage
-
-### User Password Protection
+### Print-Only PDF
 
 ```typescript
-import { PDFGenerator } from '@html-to-pdf/generator';
-
-const generator = new PDFGenerator();
-const element = document.getElementById('content');
-
-const result = await generator.generate(element, {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'SecurePass123!',
-    encryptionStrength: 256
+securityOptions: {
+  enabled: true,
+  userPassword: 'printonly',
+  permissions: {
+    printing: 'highResolution',
+    modifying: false,
+    copying: false,
+    annotating: false
   }
-});
-```
-
-### Owner Password with Restrictions
-
-```typescript
-const result = await generator.generate(element, {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'OpenPassword',
-    ownerPassword: 'AdminPassword123!',
-    permissions: {
-      printing: 'lowResolution',
-      modifying: false,
-      copying: false,
-      annotating: false
-    },
-    encryptionStrength: 256
-  }
-});
-```
-
-### Full Permission Lock
-
-```typescript
-const result = await generator.generate(element, {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'DocumentAccess2024',
-    ownerPassword: 'OwnerControl2024!',
-    permissions: {
-      printing: 'none',
-      modifying: false,
-      copying: false,
-      annotating: false,
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-});
-```
-
-## Advanced Examples
-
-### Read-Only Confidential Document
-
-```typescript
-const result = await generator.generate(element, {
-  watermark: {
-    text: 'CONFIDENTIAL - READ ONLY',
-    opacity: 0.15,
-    position: 'diagonal',
-    rotation: 45
-  },
-  securityOptions: {
-    enabled: true,
-    userPassword: 'Conf2024Access',
-    ownerPassword: 'ConfOwner2024!',
-    permissions: {
-      printing: 'lowResolution',
-      modifying: false,
-      copying: false,
-      annotating: false,
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-});
-```
-
-### Distribution-Controlled PDF
-
-```typescript
-const result = await generator.generate(element, {
-  metadata: {
-    title: 'Distribution Controlled Document',
-    subject: 'Internal Use Only'
-  },
-  securityOptions: {
-    enabled: true,
-    userPassword: generateSecurePassword(), // Generate per recipient
-    ownerPassword: 'MasterOwnerPassword123!',
-    permissions: {
-      printing: 'highResolution',
-      modifying: false,
-      copying: false, // Prevent copying content
-      annotating: true, // Allow notes/comments
-      fillingForms: false,
-      contentAccessibility: false, // No screen reader access
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-});
-
-function generateSecurePassword(): string {
-  return 'Pass' + Math.random().toString(36).substring(2, 15) + Date.now();
 }
 ```
 
-### Printable but Non-Editable
+### Annotate-Only PDF
 
 ```typescript
-const result = await generator.generate(element, {
+securityOptions: {
+  enabled: true,
+  userPassword: 'review',
+  permissions: {
+    printing: 'lowResolution',
+    modifying: false,
+    copying: false,
+    annotating: true,        // Can add comments
+    fillingForms: true       // Can fill forms
+  }
+}
+```
+
+### Copy-Allowed PDF
+
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'copy-ok',
+  permissions: {
+    printing: 'highResolution',
+    modifying: false,
+    copying: true,           // Can copy text
+    annotating: false
+  }
+}
+```
+
+## Common Use Cases
+
+### Invoice Protection
+
+Protect invoices from modification while allowing printing:
+
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'invoice-' + Date.now(),
+  permissions: {
+    printing: 'highResolution',
+    modifying: false,
+    copying: true,    // Allow copying invoice details
+    annotating: false
+  }
+}
+```
+
+### Confidential Reports
+
+Maximum protection for sensitive documents:
+
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: generateSecurePassword(),
+  ownerPassword: adminPassword,
+  permissions: {
+    printing: 'none',
+    modifying: false,
+    copying: false,
+    annotating: false,
+    fillingForms: false
+  }
+}
+```
+
+### Forms Distribution
+
+Allow users to fill forms but not modify structure:
+
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'form-access',
+  permissions: {
+    printing: 'highResolution',
+    modifying: false,
+    copying: false,
+    annotating: true,
+    fillingForms: true
+  }
+}
+```
+
+## Best Practices
+
+### 1. Strong Passwords
+
+```typescript
+// Bad - weak password
+userPassword: '1234'
+
+// Good - strong password
+userPassword: crypto.randomBytes(16).toString('hex')
+```
+
+### 2. Separate User and Owner Passwords
+
+```typescript
+securityOptions: {
+  enabled: true,
+  userPassword: 'user-access-key',     // For viewing
+  ownerPassword: 'admin-master-key',   // For full control
+  permissions: { /* ... */ }
+}
+```
+
+### 3. Default Permissions
+
+If permissions are not specified, the library defaults to allowing print and copy:
+
+```typescript
+// This allows print and copy by default
+securityOptions: {
+  enabled: true,
+  userPassword: 'secret'
+  // No permissions specified - defaults to print + copy
+}
+```
+
+### 4. Progressive Enhancement
+
+For public documents, don't use security. Only apply for sensitive content:
+
+```typescript
+const securityOptions = isConfidential ? {
+  enabled: true,
+  userPassword: generatePassword(),
+  permissions: restrictedPermissions
+} : undefined;
+
+const generator = new PDFGenerator({ securityOptions });
+```
+
+## Security Limitations
+
+### What This DOES Protect Against
+
+- Casual unauthorized access
+- Accidental modifications
+- Unauthorized printing/copying (enforced by PDF readers)
+- Basic document protection
+
+### What This DOES NOT Protect Against
+
+- Determined attackers with password cracking tools (RC4 40-bit is weak)
+- Users with specialized PDF tools
+- Screen capture / photography
+- OCR of printed documents
+
+## Alternative Solutions
+
+For stronger security requirements:
+
+### 1. Server-Side Encryption
+
+Use stronger encryption libraries on the server:
+
+```typescript
+// After generating PDF with this library
+import { PDFDocument } from 'pdf-lib';
+
+const pdfDoc = await PDFDocument.load(pdfBytes);
+// Use pdf-lib for stronger encryption if needed
+```
+
+### 2. External Tools
+
+- **node-qpdf**: Supports AES 128/256
+- **PDFtk**: Command-line PDF toolkit
+- **Apache PDFBox**: Java-based PDF library
+
+### 3. Access Control
+
+Combine with application-level access control:
+
+```typescript
+// Generate unique password per user
+const userPassword = await hashUserCredentials(userId);
+
+await generator.generatePDF(element, 'document.pdf', {
   securityOptions: {
     enabled: true,
-    userPassword: 'PrintableAccess',
-    ownerPassword: 'OwnerPasswordSecure!',
-    permissions: {
-      printing: 'highResolution', // Allow full quality printing
-      modifying: false,
-      copying: true, // Allow copying for reference
-      annotating: true, // Allow highlighting/notes
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 128
+    userPassword,
+    permissions: getUserPermissions(userRole)
   }
 });
 ```
 
-### Form-Fillable but Protected
+## Troubleshooting
+
+### PDF Opens Without Password Prompt
+
+**Issue**: PDF opens directly without asking for password.
+
+**Solution**: Ensure `enabled: true` is set:
 
 ```typescript
-const result = await generator.generate(element, {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'FormAccess',
-    ownerPassword: 'FormOwner2024!',
-    permissions: {
-      printing: 'highResolution',
-      modifying: false, // Can't modify document structure
-      copying: false, // Prevent content theft
-      annotating: false,
-      fillingForms: true, // Only form fields can be filled
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-});
+securityOptions: {
+  enabled: true,  // Must be true!
+  userPassword: 'secret'
+}
 ```
 
-### Screen-Reader Accessible Secure
+### Permissions Not Enforced
+
+**Issue**: User can still copy/print despite restrictions.
+
+**Solution**: Permissions are enforced by the PDF reader. Some readers may ignore restrictions. This is a limitation of PDF security in general, not this library.
+
+### TypeScript Errors
+
+**Issue**: TypeScript errors with security options.
+
+**Solution**: Import types:
 
 ```typescript
-const result = await generator.generate(element, {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'AccessibleDoc',
-    ownerPassword: 'Owner123Secure!',
-    permissions: {
-      printing: 'lowResolution',
-      modifying: false,
-      copying: false,
-      annotating: false,
-      fillingForms: false,
-      contentAccessibility: true, // Allows screen readers
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-});
-```
+import type { PDFSecurityOptions } from '@encryptioner/html-to-pdf-generator';
 
-## Common Patterns
-
-### Public Shareable Document
-
-```typescript
-const publicShareable = {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'Public2024', // Simple, widely shareable
-    permissions: {
-      printing: 'highResolution',
-      modifying: false,
-      copying: true,
-      annotating: true,
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 128
-  }
+const security: PDFSecurityOptions = {
+  enabled: true,
+  userPassword: 'secret'
 };
 ```
 
-### Sensitive Internal Document
+## Related Documentation
 
-```typescript
-const sensitiveInternal = {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'SensitiveAccess2024',
-    ownerPassword: 'SensitiveOwner2024!',
-    permissions: {
-      printing: 'lowResolution',
-      modifying: false,
-      copying: false,
-      annotating: false,
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-};
-```
+- [Metadata](./metadata.md) - Add author, title, and other metadata
+- [Watermarks](./watermarks.md) - Add visible watermarks
+- [Headers & Footers](./headers-footers.md) - Add headers and footers
+- [Batch Generation](./batch-generation.md) - Generate multiple PDFs
 
-### Executive Summary Secure
+## Support
 
-```typescript
-const executiveSecure = {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'Executive2024',
-    ownerPassword: 'ExecOwner2024!',
-    permissions: {
-      printing: 'highResolution',
-      modifying: false,
-      copying: false,
-      annotating: true,
-      fillingForms: false,
-      contentAccessibility: false,
-      documentAssembly: false
-    },
-    encryptionStrength: 256
-  }
-};
-```
-
-### Printable Marketing Material
-
-```typescript
-const marketingMaterial = {
-  securityOptions: {
-    enabled: true,
-    userPassword: 'PrintMe2024',
-    permissions: {
-      printing: 'highResolution',
-      modifying: false,
-      copying: true,
-      annotating: false,
-      fillingForms: false,
-      contentAccessibility: true,
-      documentAssembly: false
-    },
-    encryptionStrength: 128
-  }
-};
-```
-
-## Permission Combinations Guide
-
-| Use Case | Printing | Modify | Copy | Annotate | Forms | Accessibility |
-|----------|----------|--------|------|----------|-------|---------------|
-| Read-Only | Low | No | No | No | No | Yes |
-| Printable | High | No | Yes | Yes | No | Yes |
-| Forms | Low | No | No | No | Yes | Yes |
-| Public | High | No | Yes | Yes | No | Yes |
-| Secure | None | No | No | No | No | Yes |
-| Collaborative | High | No | Yes | Yes | No | Yes |
-
-## Password Security Best Practices
-
-1. **User Password**:
-   - Minimum 8 characters
-   - Mix of uppercase, lowercase, numbers, special characters
-   - Generate unique passwords for sensitive documents
-   - Use random generation for automated distribution
-
-2. **Owner Password**:
-   - Much stronger than user password
-   - Minimum 12 characters
-   - Store securely in password manager
-   - Never hardcode in source code
-
-3. **Encryption Strength**:
-   - Use 256-bit for highly sensitive documents
-   - Use 128-bit for standard protection
-
-4. **Password Distribution**:
-   - Deliver passwords via separate secure channel
-   - Use different password for each recipient when possible
-   - Track password distribution for compliance
-
-5. **Password Management**:
-   - Never log passwords in files or logs
-   - Use environment variables for sensitive data
-   - Implement password rotation policies
-
-## Tips and Best Practices
-
-1. **Permission Strategy**: Define clear permission sets based on document sensitivity
-
-2. **Password Complexity**: Generate strong passwords programmatically
-
-3. **Accessibility**: Always allow content accessibility for compliance with accessibility standards
-
-4. **Testing**: Test encrypted PDFs in different PDF readers to ensure compatibility
-
-5. **Documentation**: Document why specific permissions are set for each document type
-
-6. **Compliance**: Ensure encryption meets regulatory requirements (HIPAA, GDPR, etc.)
-
-7. **Version Control**: Update passwords for new document versions
-
-8. **Audit Trail**: Log which documents were encrypted with which passwords
-
-9. **Recovery**: Implement password reset procedures for legitimate document owners
-
-10. **Standards**: Follow NIST guidelines for encryption strength recommendations
-
-## See Also
-
-- [Watermarks](./watermarks.md) - Add security watermarks
-- [Metadata](./metadata.md) - Track document information
-- [Headers/Footers](./headers-footers.md) - Add classification markings
+- [GitHub Issues](https://github.com/Encryptioner/html-to-pdf-generator/issues)
+- [NPM Package](https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator)

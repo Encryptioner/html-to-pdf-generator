@@ -1,83 +1,92 @@
-# PDF Generator Library
+# HTML to PDF Generator
 
-A modern, reusable library for generating multi-page PDFs from HTML content with proper pagination, styling, and document-like formatting.
+A modern, framework-agnostic library for converting HTML content to professional multi-page PDFs with smart pagination and rich features.
 
-## Features
+[![npm version](https://badge.fury.io/js/@encryptioner%2Fhtml-to-pdf-generator.svg)](https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-### Core Features
-- **Multi-page support**: Automatically splits content across multiple pages
-- **Smart pagination**: Respects element boundaries and prevents awkward cuts
-- **HTML String Support**: Generate PDFs from HTML strings or DOM elements
-- **Tailwind CSS Compatible**: Automatic OKLCH to RGB conversion for Tailwind CSS
-- **Framework Adapters**: Works with React, Vue, Svelte, or vanilla JS
-- **Progress tracking**: Real-time progress updates during generation
-- **Type-safe**: Full TypeScript support
-- **External CSS**: Automatically loads and processes external stylesheets
+**📦 NPM Package:** https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator
 
-### Advanced Image Support
-- **SVG to Image Conversion**: Automatically converts SVG elements to images
-- **Image Optimization**: Compress and resize images for optimal PDF size
-- **Background Images**: Proper handling of CSS background images
-- **Image Preloading**: Ensures all images are loaded before PDF generation
-- **Data URL Support**: Works with data URLs and external images
-- **Quality Control**: Configurable JPEG quality and compression
+---
 
-### Advanced Table Handling
-- **Header Repetition**: Table headers automatically repeat on each page
-- **Row Splitting Prevention**: Keeps table rows together across pages
-- **Auto-borders**: Enforce borders for better PDF visibility
-- **Column Width Fixing**: Consistent column widths across pages
-- **Text Wrapping**: Smart text wrapping in table cells
-- **Zebra Striping**: Optional alternating row colors
-- **Table Splitting**: Intelligently split large tables across pages
+## 📚 Documentation
 
-### Smart Page Breaks
-- **CSS Page Break Support**: Respects `page-break-before/after/inside` properties
-- **Orphaned Heading Prevention**: Keeps headings with their content
-- **Element Avoidance**: Configurable elements that shouldn't be split
-- **Custom Break Points**: Define where pages should break
-- **Widow/Orphan Control**: Prevents lonely lines at page boundaries
+**Complete documentation is available in the [documentation](./documentation/) folder:**
 
-### 📖 Comprehensive Documentation
+- **[📖 Full Documentation Index](./documentation/index.md)** - Complete guide and API reference
+- **[🚀 Quick Start Guide](./documentation/guides/getting-started.md)** - Get started in 5 minutes
+- **[⚙️ Installation Guide](./documentation/guides/installation.md)** - Detailed installation instructions
+- **[🎨 API Reference](./documentation/api/options.md)** - All options and configurations
 
-**Core Features:**
+### Framework Guides
+- [React Integration](./documentation/guides/react-guide.md)
+- [Vue 3 Integration](./documentation/guides/vue-guide.md)
+- [Svelte Integration](./documentation/guides/svelte-guide.md)
+- [Vanilla JS/TS](./documentation/guides/vanilla-guide.md)
+- [Server-Side (Node.js)](./documentation/guides/server-side-guide.md)
+
+### Feature Documentation
 - [Multi-Page Generation](./documentation/features/multi-page.md)
 - [Image Handling](./documentation/features/images.md)
 - [Table Support](./documentation/features/tables.md)
 - [Page Breaks](./documentation/features/page-breaks.md)
 - [Color Management](./documentation/features/colors.md)
-
-**Advanced Features:**
 - [Watermarks](./documentation/advanced/watermarks.md)
 - [Headers & Footers](./documentation/advanced/headers-footers.md)
 - [Metadata](./documentation/advanced/metadata.md)
-- [Batch Generation](./documentation/advanced/batch-generation.md)
-- [Templates](./documentation/advanced/templates.md)
-- [Fonts](./documentation/advanced/fonts.md)
-- [Table of Contents](./documentation/advanced/table-of-contents.md)
-- [Bookmarks](./documentation/advanced/bookmarks.md)
 - [Security & Encryption](./documentation/advanced/security.md)
-- [Async Processing](./documentation/advanced/async-processing.md)
-- [Preview Component](./documentation/advanced/preview.md)
-- [URL to PDF](./documentation/advanced/url-to-pdf.md)
+- [PDF Preview](./documentation/advanced/preview.md)
+- [Batch Generation](./documentation/advanced/batch-generation.md)
 
-**[📚 Full Documentation Index](./documentation/index.md)**
+---
 
-## Installation
+## ✨ Features
+
+### Core Features
+- ✅ **Multi-page support** with smart pagination
+- ✅ **Framework adapters** for React, Vue, Svelte, and vanilla JS
+- ✅ **OKLCH color support** with automatic Tailwind CSS compatibility
+- ✅ **Image optimization** with SVG conversion and DPI control
+- ✅ **Table pagination** with automatic header repetition
+- ✅ **Smart page breaks** with orphan prevention
+- ✅ **HTML string support** for generating PDFs from HTML markup
+- ✅ **TypeScript support** with full type definitions
+- ✅ **Progress tracking** with real-time callbacks
+
+### Advanced Features
+- ✅ **Watermarks** - Add text or image watermarks with opacity control
+- ✅ **Headers/Footers** - Dynamic templates with variables ({{pageNumber}}, {{totalPages}}, {{date}}, {{title}})
+- ✅ **PDF Metadata** - Set title, author, subject, keywords, and creation date
+- ✅ **PDF Security** - Password protection and permission controls (printing, copying, modifying)
+- ✅ **PDF Preview** - Real-time PDF preview with live updates and debouncing
+- ✅ **Batch generation** - Combine multiple HTML sections into one PDF
+- ✅ **Media type emulation** - Apply @media print styles automatically
+- ✅ **External CSS** - Automatic loading and processing of stylesheets
+- ✅ **Background images** - Proper handling of CSS background images
+- ✅ **Custom CSS injection** - Add custom styles before rendering
+
+---
+
+## 📦 Installation
 
 ```bash
 npm install @encryptioner/html-to-pdf-generator
-# or
+```
+
+```bash
 pnpm add @encryptioner/html-to-pdf-generator
-# or
+```
+
+```bash
 yarn add @encryptioner/html-to-pdf-generator
 ```
 
-## Quick Start
+---
+
+## 🚀 Quick Start
 
 ### Vanilla JavaScript/TypeScript
 
-**From DOM Element:**
 ```typescript
 import { generatePDF } from '@encryptioner/html-to-pdf-generator';
 
@@ -87,17 +96,19 @@ await generatePDF(element, 'my-document.pdf', {
   orientation: 'portrait',
   margins: [10, 10, 10, 10], // [top, right, bottom, left] in mm
   showPageNumbers: true,
-  compress: true,
-  imageQuality: 0.85,
-  onProgress: (progress) => console.log(`${progress}%`),
+  watermark: {
+    text: 'CONFIDENTIAL',
+    opacity: 0.1,
+    position: 'diagonal'
+  }
 });
 ```
 
-**From HTML String:**
+### From HTML String
+
 ```typescript
 import { generatePDFFromHTML } from '@encryptioner/html-to-pdf-generator';
 
-// Full HTML document
 const html = `
 <!DOCTYPE html>
 <html>
@@ -108,7 +119,7 @@ const html = `
     </style>
   </head>
   <body>
-    <div class="header">My Document</div>
+    <h1 class="header">My Document</h1>
     <p>This is a paragraph with some content.</p>
   </body>
 </html>
@@ -116,40 +127,11 @@ const html = `
 
 await generatePDFFromHTML(html, 'document.pdf', {
   format: 'a4',
-  showPageNumbers: true,
+  metadata: {
+    title: 'My Document',
+    author: 'John Doe'
+  }
 });
-
-// Or HTML fragment
-const fragment = `
-<div>
-  <h1>Hello World</h1>
-  <p>Simple HTML fragment</p>
-</div>
-`;
-
-await generatePDFFromHTML(fragment, 'fragment.pdf');
-```
-
-**With Tailwind CSS:**
-```typescript
-import { generatePDFFromHTML } from '@encryptioner/html-to-pdf-generator';
-
-const htmlWithTailwind = `
-<!DOCTYPE html>
-<html>
-  <head>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body>
-    <div class="p-8 bg-gray-100">
-      <h1 class="text-3xl font-bold text-blue-600">Styled Document</h1>
-      <p class="mt-4 text-gray-700">Content with Tailwind classes</p>
-    </div>
-  </body>
-</html>
-`;
-
-await generatePDFFromHTML(htmlWithTailwind, 'tailwind-doc.pdf');
 ```
 
 ### React
@@ -236,7 +218,176 @@ const { targetRef, generatePDF, isGenerating, progress } = usePDFGenerator({
 </button>
 ```
 
-## MCP Server (Model Context Protocol)
+---
+
+## 🔧 Advanced Usage
+
+### Watermarks
+
+```typescript
+await generatePDF(element, 'document.pdf', {
+  watermark: {
+    text: 'CONFIDENTIAL',
+    opacity: 0.1,
+    position: 'diagonal', // 'center' | 'diagonal' | 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+    fontSize: 48,
+    color: '#999999',
+    rotation: 45
+  }
+});
+```
+
+### Headers & Footers
+
+```typescript
+await generatePDF(element, 'document.pdf', {
+  metadata: {
+    title: 'Annual Report 2024'
+  },
+  headerTemplate: {
+    template: '<div style="text-align: center;">{{title}} - {{date}}</div>',
+    height: 15,
+    css: 'font-size: 11px; border-bottom: 1px solid #ccc;'
+  },
+  footerTemplate: {
+    template: '<div style="text-align: center;">Page {{pageNumber}} of {{totalPages}}</div>',
+    height: 12
+  }
+});
+```
+
+**Available template variables:**
+- `{{pageNumber}}` - Current page number
+- `{{totalPages}}` - Total number of pages
+- `{{date}}` - Current date
+- `{{title}}` - Document title from metadata
+
+### PDF Security
+
+Password protect your PDFs and control permissions:
+
+```typescript
+await generatePDF(element, 'secure.pdf', {
+  securityOptions: {
+    enabled: true,
+    userPassword: 'secret123',      // Password to open PDF
+    ownerPassword: 'admin456',      // Password to change permissions
+    permissions: {
+      printing: 'highResolution',   // 'none' | 'lowResolution' | 'highResolution'
+      modifying: false,             // Disable modifications
+      copying: false,               // Disable text copying
+      annotating: false,            // Disable annotations
+      fillingForms: false           // Disable form filling
+    }
+  }
+});
+```
+
+**Note:** jsPDF uses RC4 40-bit encryption, which provides basic protection but is not suitable for highly sensitive documents. For stronger encryption, consider server-side solutions.
+
+**Full security documentation:** [documentation/advanced/security.md](./documentation/advanced/security.md)
+
+### PDF Preview
+
+Display a real-time preview of your PDF with automatic updates as content changes:
+
+```typescript
+import { PDFGenerator } from '@encryptioner/html-to-pdf-generator';
+
+const generator = new PDFGenerator({
+  format: 'a4',
+  previewOptions: {
+    containerId: 'pdf-preview',   // ID of container element (required)
+    liveUpdate: true,             // Auto-update when content changes
+    debounce: 500,                // Wait 500ms after changes before updating
+    scale: 1,                     // Lower scale for faster preview
+    quality: 0.7                  // Lower quality for faster preview
+  }
+});
+
+// Start preview
+const contentElement = document.getElementById('content');
+await generator.startPreview(contentElement);
+
+// Preview automatically updates as content changes
+// Manually update if needed: await generator.updatePreview();
+
+// Stop preview and download final high-quality PDF
+generator.stopPreview();
+await generator.generatePDF(contentElement, 'final.pdf');
+```
+
+**HTML Structure:**
+```html
+<div id="content">
+  <!-- Your content to preview -->
+</div>
+
+<div id="pdf-preview" style="width: 100%; height: 600px; border: 1px solid #ccc;"></div>
+```
+
+**Full preview documentation:** [documentation/advanced/preview.md](./documentation/advanced/preview.md)
+
+### Batch Generation
+
+```typescript
+import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
+
+const items = [
+  {
+    content: document.getElementById('section-1'),
+    pageCount: 2,
+    title: 'Introduction',
+    newPage: true // Start on a new page
+  },
+  {
+    content: document.getElementById('section-2'),
+    pageCount: 3,
+    title: 'Content',
+    newPage: true
+  }
+];
+
+const result = await generateBatchPDF(items, 'combined.pdf', {
+  showPageNumbers: true
+});
+
+console.log(`Generated ${result.totalPages} pages`);
+```
+
+### Using the PDFGenerator Class
+
+```typescript
+import { PDFGenerator } from '@encryptioner/html-to-pdf-generator';
+
+const generator = new PDFGenerator({
+  format: 'a4',
+  orientation: 'portrait',
+  margins: [15, 15, 15, 15],
+  showPageNumbers: true,
+  pageNumberPosition: 'footer',
+  compress: true,
+  onProgress: (progress) => {
+    console.log(`Generating PDF: ${progress}%`);
+  },
+  onComplete: (blob) => {
+    console.log(`PDF generated! Size: ${blob.size} bytes`);
+  },
+  onError: (error) => {
+    console.error('PDF generation failed:', error);
+  },
+});
+
+// Generate PDF
+await generator.generatePDF(element, 'document.pdf');
+
+// Or get blob without downloading
+const blob = await generator.generateBlob(element);
+```
+
+---
+
+## 🖥️ MCP Server (Model Context Protocol)
 
 The package includes an **MCP server** for server-side PDF generation, enabling Claude Desktop and other MCP clients to generate PDFs.
 
@@ -267,462 +418,97 @@ The package includes an **MCP server** for server-side PDF generation, enabling 
 
 ### MCP Tools Available
 
-- **`generate_pdf`** - Generate PDF from HTML with full feature support (watermarks, headers/footers, metadata)
-- **`generate_batch_pdf`** - Combine multiple HTML sections into one PDF with auto-scaling
+- **`generate_pdf`** - Generate PDF from HTML with full feature support
+- **`generate_batch_pdf`** - Combine multiple HTML sections into one PDF
 - **`generate_pdf_from_url`** - Convert web pages to PDF (CORS-aware)
 
 **📖 Full MCP Documentation:** See [mcp/README.md](./mcp/README.md) for complete setup, API reference, and examples.
 
-## Advanced Usage
-
-### Using the PDFGenerator Class
-
-```typescript
-import { PDFGenerator } from '@encryptioner/html-to-pdf-generator';
-
-const generator = new PDFGenerator({
-  format: 'a4',
-  orientation: 'portrait',
-  margins: [15, 15, 15, 15],
-  showPageNumbers: true,
-  pageNumberPosition: 'footer',
-  compress: true,
-  onProgress: (progress) => {
-    console.log(`Generating PDF: ${progress}%`);
-  },
-  onComplete: (blob) => {
-    console.log(`PDF generated! Size: ${blob.size} bytes`);
-  },
-  onError: (error) => {
-    console.error('PDF generation failed:', error);
-  },
-});
-
-const element = document.getElementById('content');
-const result = await generator.generatePDF(element, 'document.pdf');
-
-console.log(`Generated ${result.pageCount} pages in ${result.generationTime}ms`);
-console.log(`File size: ${result.fileSize} bytes`);
-```
-
-### Generate Blob Instead of Downloading
-
-```typescript
-import { generatePDFBlob } from '@encryptioner/html-to-pdf-generator';
-
-const element = document.getElementById('content');
-const blob = await generatePDFBlob(element, {
-  format: 'a4',
-  compress: true,
-});
-
-// Do something with the blob (e.g., upload to server)
-const formData = new FormData();
-formData.append('pdf', blob, 'document.pdf');
-await fetch('/api/upload', { method: 'POST', body: formData });
-```
-
-### Custom Color Replacements
-
-```typescript
-import { generatePDF } from '@encryptioner/html-to-pdf-generator';
-
-await generatePDF(element, 'document.pdf', {
-  colorReplacements: {
-    '--my-brand-color': '#3b82f6',
-    '--my-accent-color': '#10b981',
-  },
-});
-```
-
-### With Progress Indicator
-
-```tsx
-import { usePDFGenerator } from '@encryptioner/html-to-pdf-generator/react';
-
-function DocumentViewer() {
-  const { targetRef, generatePDF, isGenerating, progress, error } = usePDFGenerator({
-    filename: 'report.pdf',
-    format: 'a4',
-    margins: [20, 20, 20, 20],
-    showPageNumbers: true,
-  });
-
-  return (
-    <div>
-      <div ref={targetRef}>
-        {/* Your document content */}
-      </div>
-
-      <button onClick={generatePDF} disabled={isGenerating}>
-        Download PDF
-      </button>
-
-      {isGenerating && (
-        <div>
-          <div>Generating PDF...</div>
-          <progress value={progress} max="100" />
-          <span>{progress}%</span>
-        </div>
-      )}
-
-      {error && <div>Error: {error.message}</div>}
-    </div>
-  );
-}
-```
-
-### Batch PDF Generation
-
-Combine multiple HTML elements or strings into a single PDF with control over page breaks:
+---
 
-```typescript
-import { generateBatchPDF } from '@encryptioner/html-to-pdf-generator';
+## 📖 API Options
 
-const items = [
-  {
-    content: document.getElementById('intro'),
-    pageCount: 2,
-    title: 'Introduction',
-    newPage: true  // Force on new page
-  },
-  {
-    content: document.getElementById('main'),
-    pageCount: 5,
-    title: 'Main Content',
-    newPage: true  // Force on new page
-  },
-  {
-    content: document.getElementById('summary'),
-    pageCount: 1,
-    title: 'Summary',
-    newPage: false  // Can share page with previous content
-  },
-];
+### PDFGeneratorOptions
 
-const result = await generateBatchPDF(items, 'report.pdf', {
-  format: 'a4',
-  showPageNumbers: true,
-});
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `format` | `'a4' \| 'letter' \| 'a3' \| 'legal'` | `'a4'` | Paper format |
+| `orientation` | `'portrait' \| 'landscape'` | `'portrait'` | Page orientation |
+| `margins` | `[number, number, number, number]` | `[10, 10, 10, 10]` | Margins [top, right, bottom, left] in mm |
+| `compress` | `boolean` | `true` | Enable PDF compression |
+| `scale` | `number` | `2` | HTML2Canvas scale factor (1-4) |
+| `imageQuality` | `number` | `0.85` | JPEG quality (0-1) |
+| `showPageNumbers` | `boolean` | `false` | Show page numbers |
+| `pageNumberPosition` | `'header' \| 'footer'` | `'footer'` | Page number position |
+| `customCSS` | `string` | `''` | Custom CSS to inject |
+| `watermark` | `WatermarkOptions` | `undefined` | Watermark configuration |
+| `headerTemplate` | `HeaderFooterTemplate` | `undefined` | Header template |
+| `footerTemplate` | `HeaderFooterTemplate` | `undefined` | Footer template |
+| `metadata` | `PDFMetadata` | `undefined` | PDF metadata |
+| `securityOptions` | `PDFSecurityOptions` | `undefined` | Security & encryption settings |
+| `emulateMediaType` | `'screen' \| 'print'` | `'screen'` | Media type to emulate |
+| `onProgress` | `(progress: number) => void` | - | Progress callback (0-100) |
+| `onComplete` | `(blob: Blob) => void` | - | Completion callback |
+| `onError` | `(error: Error) => void` | - | Error callback |
 
-console.log(`Generated ${result.totalPages} pages`);
-```
+**Full API documentation:** [documentation/api/options.md](./documentation/api/options.md)
 
-**📖 For detailed documentation, examples, and API reference, see [Batch Generation Guide](./documentation/advanced/batch-generation.md)**
+---
 
-## API Reference
+## 🔍 Browser Compatibility
 
-### PDFGenerator Class
+- ✅ Chrome/Edge 90+
+- ✅ Firefox 88+
+- ✅ Safari 14+
+- ✅ Modern mobile browsers
 
-#### Constructor
+**Note:** Requires browser support for html2canvas and jsPDF.
 
-```typescript
-new PDFGenerator(options?: Partial<PDFGeneratorOptions>)
-```
+---
 
-#### Methods
+## 🤝 Contributing
 
-##### generatePDF()
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
 
-```typescript
-async generatePDF(
-  element: HTMLElement,
-  filename: string = 'document.pdf'
-): Promise<PDFGenerationResult>
-```
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-Generate PDF and download it.
+---
 
-##### generateBlob()
+## 📝 License
 
-```typescript
-async generateBlob(element: HTMLElement): Promise<Blob>
-```
+MIT License - see [LICENSE.md](./LICENSE.md) for details.
 
-Generate PDF blob without downloading.
+---
 
-##### updateOptions()
+## 🐛 Issues & Support
 
-```typescript
-updateOptions(options: Partial<PDFGeneratorOptions>): void
-```
+- **Issues**: [GitHub Issues](https://github.com/Encryptioner/html-to-pdf-generator/issues)
+- **Email**: mir.ankur.ruet13@gmail.com
 
-Update generator options.
+---
 
-##### getConfig()
+## 🙏 Acknowledgments
 
-```typescript
-getConfig(): {
-  options: Required<PDFGeneratorOptions>;
-  pageConfig: PDFPageConfig;
-}
-```
+Built with:
+- [jsPDF](https://github.com/parallax/jsPDF) - PDF generation
+- [html2canvas-pro](https://github.com/niklasvh/html2canvas) - HTML to canvas rendering
+- [pdf-lib](https://github.com/Hopding/pdf-lib) - PDF merging
 
-Get current configuration.
+---
 
-### Options
+## 📊 Package Stats
 
-#### PDFGeneratorOptions
+- **Bundle Size**: ~400KB (minified)
+- **Dependencies**: 3 core dependencies
+- **TypeScript**: Full type definitions included
+- **Tree-shakeable**: ESM and CJS builds
+- **Framework Support**: React, Vue, Svelte, Vanilla JS
+- **Server-Side**: Node.js with Puppeteer
 
-```typescript
-interface PDFGeneratorOptions {
-  /** PDF orientation (default: 'portrait') */
-  orientation?: 'portrait' | 'landscape';
+---
 
-  /** Paper format (default: 'a4') */
-  format?: 'a4' | 'letter' | 'a3' | 'legal';
-
-  /** Page margins in mm [top, right, bottom, left] (default: [10, 10, 10, 10]) */
-  margins?: [number, number, number, number];
-
-  /** Enable compression (default: true) */
-  compress?: boolean;
-
-  /** Scale factor for html2canvas (default: 2) */
-  scale?: number;
-
-  /** JPEG quality (0-1, default: 0.85) */
-  imageQuality?: number;
-
-  /** Enable page numbers (default: false) */
-  showPageNumbers?: boolean;
-
-  /** Page number position (default: 'footer') */
-  pageNumberPosition?: 'header' | 'footer';
-
-  /** Custom CSS to inject before rendering */
-  customCSS?: string;
-
-  /** Color replacement map (OKLCH to RGB) */
-  colorReplacements?: Record<string, string>;
-
-  /** Callback for progress updates (0-100) */
-  onProgress?: (progress: number) => void;
-
-  /** Callback when PDF generation completes */
-  onComplete?: (blob: Blob) => void;
-
-  /** Callback for errors */
-  onError?: (error: Error) => void;
-}
-```
-
-### React Hooks
-
-#### usePDFGenerator
-
-```typescript
-function usePDFGenerator(
-  options?: UsePDFGeneratorOptions
-): UsePDFGeneratorReturn
-```
-
-Returns:
-- `targetRef`: Ref to attach to element
-- `generatePDF()`: Generate and download PDF
-- `generateBlob()`: Generate blob without downloading
-- `isGenerating`: Whether PDF is being generated
-- `progress`: Current progress (0-100)
-- `error`: Error if generation failed
-- `result`: Result from last successful generation
-- `reset()`: Reset state
-
-#### usePDFGeneratorManual
-
-```typescript
-function usePDFGeneratorManual(
-  options?: UsePDFGeneratorOptions
-): UsePDFGeneratorManualReturn
-```
-
-Similar to `usePDFGenerator` but doesn't use refs. Pass element directly to functions.
-
-## Convenience Functions
-
-### generatePDF()
-
-```typescript
-async function generatePDF(
-  element: HTMLElement,
-  filename: string = 'document.pdf',
-  options: Partial<PDFGeneratorOptions> = {}
-): Promise<PDFGenerationResult>
-```
-
-### generatePDFBlob()
-
-```typescript
-async function generatePDFBlob(
-  element: HTMLElement,
-  options: Partial<PDFGeneratorOptions> = {}
-): Promise<Blob>
-```
-
-### generateBatchPDF()
-
-```typescript
-async function generateBatchPDF(
-  items: PDFContentItem[],
-  filename: string = 'document.pdf',
-  options: Partial<PDFGeneratorOptions> = {}
-): Promise<BatchPDFGenerationResult>
-```
-
-Generate and download a PDF from multiple content items.
-
-**Parameters:**
-- `items`: Array of content items, each with:
-  - `content`: HTMLElement or HTML string
-  - `pageCount`: Target page count (used as layout hint)
-  - `title`: Optional title for tracking
-  - `newPage`: Optional page break control (`true` = force new page, `false` = allow sharing, `undefined` = default)
-- `filename`: Output filename
-- `options`: PDF generation options
-
-**Returns:** BatchPDFGenerationResult containing:
-- `blob`: The generated PDF blob
-- `totalPages`: Total number of pages
-- `fileSize`: Size in bytes
-- `generationTime`: Time taken in milliseconds
-- `items`: Per-item metadata (page ranges, titles, etc.)
-
-### generateBatchPDFBlob()
-
-```typescript
-async function generateBatchPDFBlob(
-  items: PDFContentItem[],
-  options: Partial<PDFGeneratorOptions> = {}
-): Promise<BatchPDFGenerationResult>
-```
-
-Generate a batch PDF blob without downloading (useful for server uploads).
-
-### useBatchPDFGenerator()
-
-```typescript
-function useBatchPDFGenerator(
-  options?: UseBatchPDFGeneratorOptions
-): UseBatchPDFGeneratorReturn
-```
-
-React hook for batch PDF generation.
-
-**Returns:**
-- `generateBatchPDF(items)`: Generate and download PDF from items array
-- `generateBatchBlob(items)`: Generate blob without downloading
-- `isGenerating`: Whether PDF is being generated
-- `progress`: Current progress (0-100)
-- `error`: Error if generation failed
-- `result`: BatchPDFGenerationResult from last successful generation
-- `reset()`: Reset state
-
-## Utilities
-
-### PAPER_FORMATS
-
-Standard paper formats in mm:
-
-```typescript
-const PAPER_FORMATS = {
-  a4: { width: 210, height: 297 },
-  letter: { width: 215.9, height: 279.4 },
-  a3: { width: 297, height: 420 },
-  legal: { width: 215.9, height: 355.6 },
-};
-```
-
-### TAILWIND_COLOR_REPLACEMENTS
-
-Pre-defined Tailwind CSS v4 OKLCH to RGB color mappings.
-
-### sanitizeFilename()
-
-```typescript
-function sanitizeFilename(name: string, extension: string): string
-```
-
-Sanitize filename for safe file system usage.
-
-## Best Practices
-
-### 1. Prepare Your Content
-
-Ensure your HTML content is well-structured and uses fixed widths where possible:
-
-```tsx
-<div ref={targetRef} style={{ width: '794px' }}> {/* A4 width at 96 DPI */}
-  {/* Your content */}
-</div>
-```
-
-### 2. Handle Loading States
-
-Always show loading indicators:
-
-```tsx
-{isGenerating && (
-  <div>
-    <Spinner />
-    <span>Generating PDF... {progress}%</span>
-  </div>
-)}
-```
-
-### 3. Error Handling
-
-Implement proper error handling:
-
-```tsx
-const { error } = usePDFGenerator({
-  onError: (err) => {
-    console.error('PDF generation failed:', err);
-    showToast('Failed to generate PDF. Please try again.');
-  },
-});
-```
-
-### 4. Optimize for Performance
-
-- Use appropriate scale (lower for faster generation)
-- Enable compression
-- Adjust image quality based on needs
-
-```typescript
-const generator = new PDFGenerator({
-  scale: 1.5, // Lower scale = faster
-  compress: true,
-  imageQuality: 0.8, // Lower quality = smaller file
-});
-```
-
-### 5. Test with Different Content Sizes
-
-Always test with:
-- Short content (1 page)
-- Medium content (2-5 pages)
-- Long content (10+ pages)
-
-## Limitations
-
-**Current Limitations:**
-1. **Browser Environment Required** - Core library requires DOM and canvas APIs (use Node adapter with Puppeteer for server-side)
-2. **Complex CSS** - Some advanced CSS features may render differently than in browser
-3. **Web Fonts** - Ensure fonts are loaded before PDF generation
-4. **Interactive Elements** - Only visual representation is captured (no form inputs, videos, etc.)
-5. **Large Documents** - Very large documents (50+ pages) may take several seconds to generate
-
-## License
-
-MIT License - see [LICENSE.md](./LICENSE.md) for details
-
-## Contributing
-
-Contributions welcome! Please follow the existing code style and add tests for new features.
-
-## Author
-
-Mir Mursalin Ankur
-- Website: https://encryptioner.github.io/
-- LinkedIn: https://www.linkedin.com/in/mir-mursalin-ankur
-- GitHub: https://github.com/Encryptioner
-- Email: mir.ankur.ruet13@gmail.com
+**Ready to get started?** → [Quick Start Guide](./documentation/guides/getting-started.md)
