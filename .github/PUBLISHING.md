@@ -625,9 +625,13 @@ For common scenarios like needing to republish with fixes, use the helper script
 
 ```bash
 ./scripts/publish-patch.sh
+
+./scripts/publish-minor.sh
+
+./scripts/publish-major.sh
 ```
 
-This script handles:
+These scripts handles:
 - Version bumping
 - Tag management
 - Committing and pushing

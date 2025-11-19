@@ -33,10 +33,14 @@ Comprehensive publishing guide covering:
 
 ### 3. Helper Scripts
 
-#### `scripts/publish-patch.sh`
-Automated patch version publishing:
+#### `scripts/publish-*.sh`
+Automated version publishing:
 ```bash
 ./scripts/publish-patch.sh
+
+./scripts/publish-minor.sh
+
+./scripts/publish-major.sh
 ```
 - Bumps version
 - Manages tags
