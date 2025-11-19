@@ -156,16 +156,16 @@ See PUBLISH.md for detailed publishing instructions.
 
 ## Key Features
 
-✅ **Framework Agnostic** - Works with React, Vue, Svelte, or vanilla JS
-✅ **Multi-page PDFs** - Automatic page splitting with smart pagination
-✅ **GoFullPage Approach** - Captures full content height, no viewport limits
-✅ **TypeScript First** - Full type definitions included
-✅ **Tree Shakeable** - Import only what you need
-✅ **Zero Config** - Works out of the box with sensible defaults
-✅ **Progress Tracking** - Real-time progress callbacks
-✅ **Image Handling** - SVG conversion, optimization, background images
-✅ **Table Support** - Smart table splitting with header repetition
-✅ **Device Independent** - Same output on all devices
+- ✅ **Framework Agnostic** - Works with React, Vue, Svelte, or vanilla JS
+- ✅ **Multi-page PDFs** - Automatic page splitting with smart pagination
+- ✅ **GoFullPage Approach** - Captures full content height, no viewport limits
+- ✅ **TypeScript First** - Full type definitions included
+- ✅ **Tree Shakeable** - Import only what you need
+- ✅ **Zero Config** - Works out of the box with sensible defaults
+- ✅ **Progress Tracking** - Real-time progress callbacks
+- ✅ **Image Handling** - SVG conversion, optimization, background images
+- ✅ **Table Support** - Smart table splitting with header repetition
+- ✅ **Device Independent** - Same output on all devices
 
 ## Package Size
 

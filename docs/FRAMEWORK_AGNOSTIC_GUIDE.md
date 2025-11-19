@@ -639,10 +639,10 @@ jobs:
 
 ## Benefits
 
-✅ **No Version Conflicts**: Uses project's own dependencies
-✅ **Smaller Bundle**: No duplicate dependencies
-✅ **Framework Agnostic**: Works with any framework or vanilla JS
-✅ **Type Safe**: Full TypeScript support
-✅ **Tree Shakeable**: Import only what you need
-✅ **Future Proof**: Easy to add more framework adapters
-✅ **Wide Node Support**: Works with Node 16-22
+- ✅ **No Version Conflicts**: Uses project's own dependencies
+- ✅ **Smaller Bundle**: No duplicate dependencies
+- ✅ **Framework Agnostic**: Works with any framework or vanilla JS
+- ✅ **Type Safe**: Full TypeScript support
+- ✅ **Tree Shakeable**: Import only what you need
+- ✅ **Future Proof**: Easy to add more framework adapters
+- ✅ **Wide Node Support**: Works with Node 16-22
