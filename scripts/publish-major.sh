@@ -1,13 +1,16 @@
 #!/bin/bash
-# Script to publish a patch version (e.g., 1.0.0 → 1.0.1)
+# Script to publish a major version (e.g., 1.5.3 → 2.0.0)
 # This handles the complete workflow including tag management
 
 set -e
 
-echo "===== Publishing Patch Version ====="
+echo "===== Publishing Major Version ====="
+echo ""
+echo "⚠️  WARNING: This is a MAJOR version bump!"
+echo "This indicates breaking changes and will reset minor/patch to 0."
 echo ""
 echo "This script will:"
-echo "1. Bump patch version in package.json (e.g., 1.0.0 → 1.0.1)"
+echo "1. Bump major version in package.json (e.g., 1.5.3 → 2.0.0)"
 echo "2. Commit the version bump"
 echo "3. Delete old tag if it exists (local and remote)"
 echo "4. Create new version tag"
@@ -18,18 +21,21 @@ echo ""
 CURRENT_VERSION=$(node -p "require('./package.json').version")
 echo "Current version: $CURRENT_VERSION"
 
-# Calculate new version (patch bump)
+# Calculate new version (major bump)
 IFS='.' read -r -a version_parts <<< "$CURRENT_VERSION"
 major="${version_parts[0]}"
-minor="${version_parts[1]}"
-patch="${version_parts[2]}"
-new_patch=$((patch + 1))
-NEW_VERSION="$major.$minor.$new_patch"
+new_major=$((major + 1))
+NEW_VERSION="$new_major.0.0"
 
 echo "New version will be: $NEW_VERSION"
 echo ""
+echo "⚠️  This is a breaking change! Make sure you've:"
+echo "   - Updated CHANGELOG.md with breaking changes"
+echo "   - Updated migration guide"
+echo "   - Reviewed all breaking API changes"
+echo ""
 
-read -p "Continue? (y/n) " -n 1 -r
+read -p "Are you sure you want to continue? (y/n) " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
     echo "Cancelled."
@@ -38,13 +44,14 @@ fi
 
 echo ""
 echo "Step 1: Updating version to $NEW_VERSION..."
-pnpm version patch --no-git-tag-version
+pnpm version major --no-git-tag-version
 
 echo "Step 2: Committing version bump..."
 git add package.json
 git commit -m "chore: bump version to $NEW_VERSION
 
-Patch release with workflow fixes and improvements."
+BREAKING CHANGE: Major release with breaking changes.
+See CHANGELOG.md for migration guide."
 
 echo "Step 3: Deleting v$NEW_VERSION tag if it exists (from previous failed attempt)..."
 git tag -d "v$NEW_VERSION" 2>/dev/null || echo "  (no local tag to delete)"
@@ -73,4 +80,6 @@ echo "   https://www.npmjs.com/package/@encryptioner/html-to-pdf-generator"
 echo ""
 echo "3. Test installation:"
 echo "   npm install @encryptioner/html-to-pdf-generator@$NEW_VERSION"
+echo ""
+echo "4. Update documentation with migration guide"
 echo ""

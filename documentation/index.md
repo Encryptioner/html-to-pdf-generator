@@ -90,20 +90,20 @@ function MyComponent() {
 
 ## Key Features at a Glance
 
-✅ **Multi-page support** with smart pagination
-✅ **Framework adapters** for React, Vue, Svelte
-✅ **OKLCH color support** and Tailwind CSS compatibility
-✅ **Image optimization** with SVG conversion & DPI control
-✅ **Table pagination** with header repetition
-✅ **Watermarks** (text and image)
-✅ **Headers/Footers** with dynamic template variables
-✅ **PDF Metadata** (title, author, subject, keywords)
-✅ **PDF Security** (password protection & permissions)
-✅ **PDF Preview** (real-time preview with live updates)
-✅ **Media type emulation** (@media print support)
-✅ **Full TypeScript support**
-✅ **Progress tracking**
-✅ **Batch generation** with PDF merging
+- ✅ **Multi-page support** with smart pagination
+- ✅ **Framework adapters** for React, Vue, Svelte
+- ✅ **OKLCH color support** and Tailwind CSS compatibility
+- ✅ **Image optimization** with SVG conversion & DPI control
+- ✅ **Table pagination** with header repetition
+- ✅ **Watermarks** (text and image)
+- ✅ **Headers/Footers** with dynamic template variables
+- ✅ **PDF Metadata** (title, author, subject, keywords)
+- ✅ **PDF Security** (password protection & permissions)
+- ✅ **PDF Preview** (real-time preview with live updates)
+- ✅ **Media type emulation** (@media print support)
+- ✅ **Full TypeScript support**
+- ✅ **Progress tracking**
+- ✅ **Batch generation** with PDF merging
 
 ---
 
@@ -114,8 +114,8 @@ documentation/
 ├── index.md (you are here)
 │
 ├── guides/
-│   ├── getting-started.md       # Quick start tutorial
-│   ├── installation.md          # Installation guide
+│   ├── getting-started.md      # Quick start tutorial
+│   ├── installation.md         # Installation guide
 │   ├── react-guide.md          # React integration
 │   ├── vue-guide.md            # Vue integration
 │   ├── svelte-guide.md         # Svelte integration
@@ -125,13 +125,26 @@ documentation/
 │   └── troubleshooting.md      # Common issues
 │
 ├── features/
+│   └── colors.md               # Color support
+│   └── images.md               # Image support
+│   └── page-breaks.md          # Handling page break
 │   └── multi-page.md           # Page splitting
+│   └── tables.md               # Table support
 │
 ├── advanced/
+│   └── batch-generation.md     # Combine multiple content items
+│   └── headers-footers.md      # Dynamic header/footer templates
 │   └── image-optimization.md   # DPI control & print quality
+│   └── metadata.md             # Set document properties
+│   └── preview.md              # Real-time PDF preview with live updates
+│   └── security.md             # Password protection & permissions
+│   └── url-to-pdf.md           # Convert web pages to PDF
+│   └── watermarks.md           # Add text & image watermarks
 │
 ├── api/
 │   └── options.md              # All options
+|
+├── tutorials/*                 # Tutorials for react, svelte, vue & vanilla JS 
 │
 └── examples/
     ├── code-examples.md        # Code samples
