@@ -492,9 +492,8 @@ If the build fails during publishing:
 ## Continuous Integration
 
 The CI workflow (`.github/workflows/ci.yml`) runs on:
-- Every push to `main` branch
-- Every push to `pre/**` branches
-- All pull requests to `main`
+- Every push to `master` branch
+- All pull requests to `master`
 
 It tests the package across Node.js versions: 18.20.0, 20, and 22.
 

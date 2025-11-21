@@ -137,7 +137,7 @@ html-to-pdf-generator/
 
 ### Creating a Branch
 
-Create a feature branch from `main`:
+Create a feature branch from `master`:
 
 ```bash
 git checkout -b feature/your-feature-name
@@ -402,7 +402,7 @@ with HTML structure and configuration options.
 
 ### Pull Request Process
 
-1. **Create a pull request** to the `main` branch
+1. **Create a pull request** to the `master` branch
 
 2. **Fill out the PR template** with:
    - Description of changes
